@@ -1,93 +1,105 @@
 import { useState, useRef } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
-  BrainCircuit,
-  CheckCircle2,
-  AlertTriangle,
-  ArrowRight,
-  FileText,
-  UploadCloud,
-  File as FileIcon,
-  X,
-} from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { ArrowLeft, UploadCloud, File as FileIcon, X, Save } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { AnalysisResult } from '@/lib/types'
-import { mockAnalysisResponse } from '@/lib/mock-data'
+import { useToast } from '@/hooks/use-toast'
 import useMainStore from '@/stores/main'
-import { StatusBadge } from '@/components/StatusBadge'
-import { cn } from '@/lib/utils'
+import { Opportunity, OpportunityStatus } from '@/lib/types'
+
+const MODALITIES = [
+  'Pregão Eletrônico',
+  'Pregão Presencial',
+  'Concorrência',
+  'Tomada de Preços',
+  'Convite',
+  'Dispensa de Licitação',
+  'Inexigibilidade',
+  'Cotação Eletrônica',
+  'Compra Direta',
+]
+
+const STATUSES: { value: OpportunityStatus; label: string }[] = [
+  { value: 'recebida', label: 'Recebida' },
+  { value: 'em_analise', label: 'Em Análise' },
+  { value: 'aguardando_decisao', label: 'Aguardando Decisão' },
+  { value: 'em_preparacao', label: 'Em Preparação' },
+  { value: 'enviada', label: 'Enviada' },
+  { value: 'encerrada', label: 'Encerrada' },
+]
 
 export default function NewOpportunity() {
-  const [files, setFiles] = useState<File[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [result, setResult] = useState<AnalysisResult | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const { toast } = useToast()
   const navigate = useNavigate()
+  const { toast } = useToast()
   const { addOpportunity } = useMainStore()
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    if (e.dataTransfer.files?.length) {
-      setFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files!)])
+  const [form, setForm] = useState({
+    title: '',
+    number: '',
+    organ: '',
+    cityState: '',
+    modality: '',
+    openingDate: '',
+    responsible: '',
+    status: 'recebida' as OpportunityStatus,
+    observations: '',
+  })
+  const [files, setFiles] = useState<File[]>([])
+  const [isSaving, setIsSaving] = useState(false)
+
+  const handleFileSelect = (selected: FileList | null) => {
+    if (selected) {
+      const pdfFiles = Array.from(selected).filter(
+        (f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'),
+      )
+      setFiles((prev) => [...prev, ...pdfFiles])
     }
   }
 
-  const removeFile = (index: number) => {
-    setFiles(files.filter((_, i) => i !== index))
-  }
+  const removeFile = (index: number) => setFiles(files.filter((_, i) => i !== index))
 
-  const processFiles = async () => {
-    if (files.length === 0) return
-    setIsProcessing(true)
-    setResult(null)
-
-    try {
-      // Simulate AI extraction logic (Hebron v6)
-      const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY
-      if (apiKey) {
-        // Implementation for actual API call would go here
-        await new Promise((r) => setTimeout(r, 2000))
-        setResult(mockAnalysisResponse)
-      } else {
-        await new Promise((r) => setTimeout(r, 2500))
-        setResult(mockAnalysisResponse)
-      }
-    } catch (e) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.title || !form.number) {
       toast({
-        title: 'Erro',
-        description: 'Falha na análise. Tente novamente.',
+        title: 'Campos obrigatórios',
+        description: 'Preencha título e número do edital.',
         variant: 'destructive',
       })
-    } finally {
-      setIsProcessing(false)
+      return
     }
-  }
-
-  const handleAddToPipeline = () => {
-    if (!result) return
-    const id = `opp-${Date.now()}`
-    addOpportunity({
-      id,
-      title: result.objeto.valor,
-      number: result.identificacao.numero_edital?.valor || 'S/N',
-      organ: result.identificacao.orgao?.valor || 'Órgão não identificado',
-      modality: result.identificacao.modalidade?.valor || 'Não identificada',
-      status: 'interesse',
-      verdict: result.veredicto,
-      score: result.score,
+    setIsSaving(true)
+    const [city, state] = form.cityState.split('/').map((s) => s.trim())
+    const opp: Opportunity = {
+      id: `opp-${Date.now()}`,
+      title: form.title,
+      number: form.number,
+      organ: form.organ,
+      modality: form.modality || 'Não informada',
+      status: form.status,
+      verdict: 'Pendente',
+      score: 0,
       dateAdded: new Date().toISOString(),
-      dueDate: result.valores_prazos.data_abertura_propostas?.valor || new Date().toISOString(),
-      openingDate: result.valores_prazos.data_abertura_propostas?.valor || new Date().toISOString(),
-      state: result.identificacao.municipio_uf?.valor?.split('/')[1] || '',
-      city: result.identificacao.municipio_uf?.valor?.split('/')[0] || '',
-      portal: result.identificacao.portal?.valor || '',
-      responsible: 'Gestor (Hebron)',
-      observations: result.resumo_simples,
+      dueDate: form.openingDate || '',
+      openingDate: form.openingDate || '',
+      state: state || '',
+      city: city || '',
+      portal: '',
+      responsible: form.responsible,
+      observations: form.observations,
       radarSynced: false,
-      analysis: result,
+      files: files.map((f) => f.name),
       checklist: [
         { id: '1', task: 'Analisar restrições do edital (Jurídico)', completed: false },
         { id: '2', task: 'Reunir atestados de capacidade técnica', completed: false },
@@ -95,200 +107,233 @@ export default function NewOpportunity() {
         { id: '4', task: 'Validar margem e viabilidade financeira', completed: false },
         { id: '5', task: 'Cadastro da proposta no portal', completed: false },
       ],
-    })
-    toast({
-      title: 'Adicionado ao Radar!',
-      description: 'Oportunidade salva na coluna "Interesse".',
-    })
-    navigate('/radar')
+    }
+    try {
+      await addOpportunity(opp, files)
+      toast({
+        title: 'Oportunidade criada!',
+        description: 'O processo foi registrado com sucesso.',
+      })
+      navigate('/radar')
+    } catch (err: unknown) {
+      toast({
+        title: 'Erro',
+        description: err instanceof Error ? err.message : 'Falha ao salvar.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6 pb-20">
-      <div className="text-center space-y-2 mb-8">
-        <h1 className="text-2xl font-bold font-display text-slate-900">
-          Análise de Edital (Camada 1)
-        </h1>
-        <p className="text-slate-500">
-          Faça o upload do edital em PDF ou Markdown. Nossa IA extrairá os dados e fará a triagem
-          inicial baseada no perfil da Hebron.
-        </p>
+    <div className="max-w-2xl mx-auto space-y-6 pb-20">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate(-1)}
+        className="-ml-2 text-slate-500"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+      </Button>
+      <div>
+        <h1 className="text-2xl font-bold font-display text-slate-900">Nova Oportunidade</h1>
+        <p className="text-slate-500">Cadastre uma nova oportunidade de licitação.</p>
       </div>
 
-      {!result && !isProcessing && (
-        <Card className="border-2 border-dashed border-slate-300 shadow-none bg-white">
-          <CardContent className="p-10">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Informações do Edital</CardTitle>
+            <CardDescription>Preencha os dados principais do processo licitatório.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Título *</Label>
+              <Input
+                id="title"
+                placeholder="Ex: Serviços de Consultoria em TI"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                required
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="number">Nº do Edital *</Label>
+                <Input
+                  id="number"
+                  placeholder="Ex: PE 045/2026"
+                  value={form.number}
+                  onChange={(e) => setForm({ ...form, number: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="organ">Órgão / Entidade</Label>
+                <Input
+                  id="organ"
+                  placeholder="Ex: Ministério do Meio Ambiente"
+                  value={form.organ}
+                  onChange={(e) => setForm({ ...form, organ: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="cityState">Município/UF</Label>
+                <Input
+                  id="cityState"
+                  placeholder="Ex: Lages/SC"
+                  value={form.cityState}
+                  onChange={(e) => setForm({ ...form, cityState: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="modality">Modalidade</Label>
+                <Select
+                  value={form.modality}
+                  onValueChange={(v) => setForm({ ...form, modality: v })}
+                >
+                  <SelectTrigger id="modality">
+                    <SelectValue placeholder="Selecione..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MODALITIES.map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="openingDate">Data de Abertura</Label>
+                <Input
+                  id="openingDate"
+                  type="date"
+                  value={form.openingDate}
+                  onChange={(e) => setForm({ ...form, openingDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="responsible">Responsável</Label>
+                <Input
+                  id="responsible"
+                  placeholder="Ex: Carlos Eduardo"
+                  value={form.responsible}
+                  onChange={(e) => setForm({ ...form, responsible: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={form.status}
+                onValueChange={(v) => setForm({ ...form, status: v as OpportunityStatus })}
+              >
+                <SelectTrigger id="status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STATUSES.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="observations">Observações</Label>
+              <Textarea
+                id="observations"
+                rows={3}
+                placeholder="Anotações iniciais sobre o edital..."
+                value={form.observations}
+                onChange={(e) => setForm({ ...form, observations: e.target.value })}
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-base">Documentos (PDF)</CardTitle>
+            <CardDescription>Anexe editais, anexos e documentos relacionados.</CardDescription>
+          </CardHeader>
+          <CardContent>
             <div
-              className="text-center transition-colors cursor-pointer"
+              className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-slate-400 transition-colors"
               onDragOver={(e) => e.preventDefault()}
-              onDrop={handleDrop}
+              onDrop={(e) => {
+                e.preventDefault()
+                handleFileSelect(e.dataTransfer.files)
+              }}
               onClick={() => fileInputRef.current?.click()}
             >
-              <UploadCloud className="mx-auto h-12 w-12 text-slate-400 mb-4" />
-              <p className="text-slate-700 font-medium">
-                Arraste os editais aqui ou clique para selecionar
+              <UploadCloud className="mx-auto h-10 w-10 text-slate-400 mb-3" />
+              <p className="text-sm text-slate-600 font-medium">
+                Arraste PDFs aqui ou clique para selecionar
               </p>
-              <p className="text-sm text-slate-400 mt-1">
-                Aceita PDF e Markdown (.md, .txt) · Vários arquivos simultâneos
-              </p>
+              <p className="text-xs text-slate-400 mt-1">Apenas arquivos PDF</p>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.md,.markdown,.txt"
+                accept=".pdf,application/pdf"
                 className="hidden"
-                onChange={(e) =>
-                  e.target.files && setFiles((prev) => [...prev, ...Array.from(e.target.files!)])
-                }
+                onChange={(e) => handleFileSelect(e.target.files)}
               />
             </div>
-
             {files.length > 0 && (
-              <div className="mt-8 space-y-3" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-slate-700">
-                    Arquivos ({files.length})
-                  </span>
-                </div>
+              <div className="mt-4 space-y-2">
                 {files.map((file, i) => (
                   <div
                     key={i}
                     className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg"
                   >
-                    <div className="flex items-center gap-3">
-                      <FileIcon className="h-5 w-5 text-blue-500" />
-                      <span className="text-sm font-medium text-slate-700">{file.name}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <FileIcon className="h-5 w-5 text-rose-500 shrink-0" />
+                      <span className="text-sm font-medium text-slate-700 truncate">
+                        {file.name}
+                      </span>
+                      <span className="text-xs text-slate-400 shrink-0">
+                        ({(file.size / 1024).toFixed(0)} KB)
+                      </span>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => removeFile(i)}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 shrink-0"
+                      onClick={() => removeFile(i)}
+                    >
                       <X className="h-4 w-4 text-slate-400" />
                     </Button>
                   </div>
                 ))}
-                <Button
-                  onClick={processFiles}
-                  className="w-full mt-4 bg-[#2563EB] hover:bg-blue-700 text-white gap-2 font-display"
-                >
-                  <BrainCircuit className="h-4 w-4" />
-                  Analisar Fila de Editais
-                </Button>
               </div>
             )}
           </CardContent>
         </Card>
-      )}
 
-      {isProcessing && (
-        <Card className="border-slate-200 shadow-sm py-16 text-center">
-          <CardContent className="space-y-6">
-            <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
-              <div className="absolute inset-0 border-4 border-slate-100 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-[#2563EB] rounded-full border-t-transparent animate-spin"></div>
-              <BrainCircuit className="h-8 w-8 text-[#2563EB]" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="text-lg font-bold font-display text-slate-900">
-                Analisando edital com IA (Hebron v6)...
-              </h3>
-              <p className="text-slate-500 max-w-sm mx-auto text-sm">
-                Extraindo requisitos, mapeando CNAEs e calculando o score inicial. Isso pode levar
-                alguns minutos.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {result && !isProcessing && (
-        <div className="space-y-6 animate-fade-in-up">
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <div
-              className={cn(
-                'p-4 flex items-center gap-4',
-                result.veredicto === 'ENTRAR'
-                  ? 'bg-[#ECFDF5] border-b border-[#A7F3D0]'
-                  : result.veredicto === 'ANALISAR MAIS'
-                    ? 'bg-[#FFFBEB] border-b border-[#FDE68A]'
-                    : 'bg-[#FEF2F2] border-b border-[#FECACA]',
-              )}
-            >
-              <div className="flex-1">
-                <StatusBadge verdict={result.veredicto} />
-                <h3 className="text-lg font-bold font-display text-slate-900 mt-2">
-                  {result.identificacao.numero_edital?.valor} - {result.identificacao.orgao?.valor}
-                </h3>
-              </div>
-              <div className="text-center bg-white p-3 rounded-xl shadow-sm border border-slate-100">
-                <span className="block text-[10px] font-bold text-slate-500 uppercase font-display">
-                  Score
-                </span>
-                <span
-                  className={cn(
-                    'block text-3xl font-black font-display leading-none',
-                    result.veredicto === 'ENTRAR' ? 'text-[#065F46]' : 'text-[#7F1D1D]',
-                  )}
-                >
-                  {result.score}
-                </span>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {result.trava && (
-                <div className="p-3 bg-[#FEF2F2] border border-[#FECACA] rounded-lg">
-                  <p className="text-sm text-[#7F1D1D]">
-                    <strong>Trava Eliminatória:</strong> {result.trava}
-                  </p>
-                </div>
-              )}
-
-              <div className="p-4 bg-slate-50 rounded-lg text-sm text-slate-700 leading-relaxed">
-                {result.resumo_simples}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 text-sm">
-                <div className="space-y-1 pb-3 border-b border-slate-100">
-                  <span className="text-slate-500">Objeto:</span>
-                  <p className="font-medium text-slate-900">{result.objeto.valor}</p>
-                </div>
-                <div className="space-y-1 pb-3 border-b border-slate-100">
-                  <span className="text-slate-500">Abertura:</span>
-                  <p className="font-medium text-slate-900">
-                    {result.valores_prazos.data_abertura_propostas?.valor}
-                  </p>
-                </div>
-                <div className="space-y-1 pb-3 border-b border-slate-100">
-                  <span className="text-slate-500">Valor Estimado:</span>
-                  <p className="font-medium text-slate-900">
-                    {result.valores_prazos.valor_estimado?.valor}
-                  </p>
-                </div>
-                <div className="space-y-1 pb-3 border-b border-slate-100">
-                  <span className="text-slate-500">Compatibilidade CNAE:</span>
-                  <p className="font-medium text-slate-900">
-                    {result.compatibilidade.cnae_compativel ? '✓ Sim' : '✗ Não'} (
-                    {result.compatibilidade.cnae_match})
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleAddToPipeline}
-                className="w-full bg-[#1F2937] hover:bg-slate-800 text-white font-display text-base h-12 gap-2 mt-4"
-              >
-                <FileText className="w-5 h-5" /> Enviar ao Pipeline (Meus Processos){' '}
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={() => setResult(null)}
-                className="w-full text-slate-500"
-              >
-                Analisar outro edital
-              </Button>
-            </div>
-          </div>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" className="flex-1" onClick={() => navigate(-1)}>
+            Cancelar
+          </Button>
+          <Button
+            type="submit"
+            className="flex-1 bg-[#2563EB] hover:bg-blue-700"
+            disabled={isSaving}
+          >
+            <Save className="w-4 h-4 mr-2" />
+            {isSaving ? 'Salvando...' : 'Salvar Oportunidade'}
+          </Button>
         </div>
-      )}
+      </form>
     </div>
   )
 }
