@@ -4,8 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/StatusBadge'
 import { UrgencySemaphore } from '@/components/UrgencySemaphore'
-import { mockOpportunities } from '@/lib/mock-data'
-import { analysisById, decisionGateById } from '@/lib/mock-analysis'
+import useMainStore from '@/stores/main'
 import { ExecutiveTab } from './ExecutiveTab'
 import { ChecklistTab } from './ChecklistTab'
 import { TimelineTab } from './TimelineTab'
@@ -14,9 +13,33 @@ import { DecisionGateTab } from './DecisionGateTab'
 
 export default function OpportunityDetail() {
   const { id } = useParams()
-  const opp = mockOpportunities.find((o) => o.id === id) || mockOpportunities[1]
-  const analysis = analysisById[opp.id]
-  const decisionGate = decisionGateById[opp.id]
+  const { opportunities, analysis: analysisMap, decisionGates } = useMainStore()
+  const opp = opportunities.find((o) => o.id === id)
+
+  if (!opp) {
+    return (
+      <div className="space-y-6 pb-20">
+        <Button variant="ghost" size="sm" asChild className="-ml-2 text-slate-500">
+          <Link to="/radar">
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Radar
+          </Link>
+        </Button>
+        <div className="p-12 flex flex-col items-center justify-center text-center border border-slate-200 rounded-xl bg-white">
+          <FileText className="h-12 w-12 text-slate-300 mb-4" />
+          <h2 className="text-lg font-semibold text-slate-700">Oportunidade não encontrada</h2>
+          <p className="text-sm text-slate-500 mt-1">
+            Esta oportunidade pode ter sido excluída ou não existe.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/radar">Voltar ao Radar</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const analysis = analysisMap[opp.id]
+  const decisionGate = decisionGates[opp.id]
 
   const tabConfig = [
     { value: 'executive', label: 'Parecer Executivo' },

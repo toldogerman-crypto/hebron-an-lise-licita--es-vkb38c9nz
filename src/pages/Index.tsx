@@ -1,41 +1,45 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { FileText, Target, CheckCircle2, Clock, ArrowRight, AlertCircle } from 'lucide-react'
+import { FileText, Target, CheckCircle2, Clock, ArrowRight, AlertCircle, Inbox } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Link } from 'react-router-dom'
-import { mockOpportunities } from '@/lib/mock-data'
 import { StatusBadge } from '@/components/StatusBadge'
+import useMainStore from '@/stores/main'
 
 export default function Index() {
-  const recentOpps = mockOpportunities.slice(0, 4)
+  const { opportunities } = useMainStore()
+  const recentOpps = opportunities.slice(0, 4)
+  const isEmpty = opportunities.length === 0
+  const inAnalysis = opportunities.filter((o) => o.status === 'Em Análise').length
+  const favorable = opportunities.filter((o) => o.verdict === 'Entrar').length
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard
           title="Total de Oportunidades"
-          value="124"
+          value={String(opportunities.length)}
           icon={Target}
-          trend="+12% que mês passado"
+          trend={isEmpty ? 'Nenhuma oportunidade' : '+12% que mês passado'}
         />
         <MetricCard
           title="Em Análise (IA)"
-          value="8"
+          value={String(inAnalysis)}
           icon={Clock}
-          trend="Tempo médio: 4m"
+          trend={isEmpty ? '—' : 'Tempo médio: 4m'}
           iconColor="text-blue-500"
         />
         <MetricCard
           title="Decisões Favoráveis"
-          value="45"
+          value={String(favorable)}
           icon={CheckCircle2}
-          trend="36% de aprovação"
+          trend={isEmpty ? '—' : '36% de aprovação'}
           iconColor="text-emerald-500"
         />
         <MetricCard
           title="Próximos Prazos"
-          value="3"
+          value={isEmpty ? '0' : '3'}
           icon={AlertCircle}
-          trend="Nas próximas 24h"
+          trend={isEmpty ? '—' : 'Nas próximas 24h'}
           iconColor="text-rose-500"
         />
       </div>
@@ -48,38 +52,57 @@ export default function Index() {
               <Link to="/radar">Ver Pipeline Completo</Link>
             </Button>
           </div>
-          <Card className="border-slate-200 shadow-sm">
-            <div className="divide-y divide-slate-100">
-              {recentOpps.map((opp) => (
-                <div
-                  key={opp.id}
-                  className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
-                >
-                  <div className="space-y-1">
-                    <Link
-                      to={`/oportunidade/${opp.id}`}
-                      className="font-medium text-slate-900 hover:text-primary hover:underline transition-all"
-                    >
-                      {opp.title}
-                    </Link>
-                    <div className="flex items-center gap-2 text-sm text-slate-500">
-                      <span>{opp.organ}</span>
-                      <span>•</span>
-                      <span>{opp.modality}</span>
+          {isEmpty ? (
+            <Card className="border-slate-200 shadow-sm">
+              <div className="p-12 flex flex-col items-center justify-center text-center">
+                <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+                  <Inbox className="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-700 mb-1">
+                  Nenhuma oportunidade encontrada
+                </h3>
+                <p className="text-sm text-slate-500 max-w-md">
+                  Não há atividades recentes. Cadastre uma nova licitação para começar.
+                </p>
+                <Button asChild className="mt-4">
+                  <Link to="/nova-oportunidade">Cadastrar Oportunidade</Link>
+                </Button>
+              </div>
+            </Card>
+          ) : (
+            <Card className="border-slate-200 shadow-sm">
+              <div className="divide-y divide-slate-100">
+                {recentOpps.map((opp) => (
+                  <div
+                    key={opp.id}
+                    className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="space-y-1">
+                      <Link
+                        to={`/oportunidade/${opp.id}`}
+                        className="font-medium text-slate-900 hover:text-primary hover:underline transition-all"
+                      >
+                        {opp.title}
+                      </Link>
+                      <div className="flex items-center gap-2 text-sm text-slate-500">
+                        <span>{opp.organ}</span>
+                        <span>•</span>
+                        <span>{opp.modality}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <StatusBadge status={opp.status} />
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to={`/oportunidade/${opp.id}`}>
+                          <ArrowRight className="h-4 w-4 text-slate-400" />
+                        </Link>
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <StatusBadge status={opp.status} />
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/oportunidade/${opp.id}`}>
-                        <ArrowRight className="h-4 w-4 text-slate-400" />
-                      </Link>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -101,26 +124,27 @@ export default function Index() {
             </CardContent>
           </Card>
 
-          <Card className="border-rose-200 bg-rose-50 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-rose-800 flex items-center gap-2">
-                <AlertCircle className="h-4 w-4" />
-                Ação Requerida
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-rose-700 mb-3">
-                2 editais estão com a documentação incompleta impedindo a análise técnica.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full border-rose-200 text-rose-700 hover:bg-rose-100"
-              >
-                Revisar Documentos
-              </Button>
-            </CardContent>
-          </Card>
+          {!isEmpty && (
+            <Card className="border-rose-200 bg-rose-50 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-rose-800 flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4" /> Ação Requerida
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-rose-700 mb-3">
+                  2 editais estão com a documentação incompleta impedindo a análise técnica.
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full border-rose-200 text-rose-700 hover:bg-rose-100"
+                >
+                  Revisar Documentos
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

@@ -2,8 +2,18 @@ import { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { mockOpportunities } from '@/lib/mock-data'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
 import { StatusBadge } from '@/components/StatusBadge'
 import { UrgencySemaphore } from '@/components/UrgencySemaphore'
 import {
@@ -17,10 +27,13 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Trash2,
+  Inbox,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Link } from 'react-router-dom'
 import { formatDate } from '@/lib/utils'
+import useMainStore from '@/stores/main'
 
 type SyncState = 'idle' | 'syncing' | 'success' | 'error'
 
@@ -50,6 +63,7 @@ export default function Radar() {
   const [view, setView] = useState<'list' | 'kanban' | 'sheets'>('kanban')
   const [syncState, setSyncState] = useState<SyncState>('idle')
   const { toast } = useToast()
+  const { opportunities, deleteAllOpportunities } = useMainStore()
 
   const handleSync = () => {
     setSyncState('syncing')
@@ -71,8 +85,18 @@ export default function Radar() {
     }, 2000)
   }
 
+  const handleDeleteAll = () => {
+    deleteAllOpportunities()
+    setSyncState('idle')
+    toast({
+      title: 'Dados Excluídos',
+      description: 'Todos os editais e análises foram removidos permanentemente.',
+    })
+  }
+
   const columns = ['Em Análise', 'Entrar', 'Analisar Mais', 'Não Entrar']
   const sheetsUrl = import.meta.env.VITE_GOOGLE_SHEETS_URL || '#'
+  const isEmpty = opportunities.length === 0
 
   return (
     <div className="space-y-6">
@@ -83,7 +107,7 @@ export default function Radar() {
             Pipeline de oportunidades e sincronização com Google Sheets.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <Button
             variant="outline"
             onClick={handleSync}
@@ -97,6 +121,37 @@ export default function Radar() {
             )}
             Sincronizar Radar
           </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                className="gap-2 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700"
+                disabled={isEmpty}
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar todos os editais
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Eliminar todos os editais?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza de que deseja excluir todos os editais? Esta ação é permanente e não
+                  pode ser desfeita. Todos os dados de oportunidades, análises de IA, respostas do
+                  Portão de Decisão e documentos serão removidos.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteAll}
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  Sim, excluir tudo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
           <Button asChild>
             <Link to="/nova-oportunidade">Nova Licitação</Link>
           </Button>
@@ -149,11 +204,26 @@ export default function Radar() {
           </div>
         </CardContent>
 
-        {view === 'kanban' && (
+        {isEmpty ? (
+          <div className="p-12 flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+              <Inbox className="h-8 w-8 text-slate-400" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-700 mb-1">
+              Nenhuma oportunidade encontrada
+            </h3>
+            <p className="text-sm text-slate-500 max-w-md">
+              O radar está vazio. Cadastre uma nova licitação para iniciar a análise automatizada.
+            </p>
+            <Button asChild className="mt-4">
+              <Link to="/nova-oportunidade">Cadastrar Oportunidade</Link>
+            </Button>
+          </div>
+        ) : view === 'kanban' ? (
           <div className="p-6 overflow-x-auto">
             <div className="flex gap-6 min-w-max">
               {columns.map((col) => {
-                const opps = mockOpportunities.filter((o) =>
+                const opps = opportunities.filter((o) =>
                   col === 'Em Análise' ? o.status === col : o.verdict === col,
                 )
                 return (
@@ -204,9 +274,7 @@ export default function Radar() {
               })}
             </div>
           </div>
-        )}
-
-        {view === 'list' && (
+        ) : view === 'list' ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-left text-slate-600">
               <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b">
@@ -221,7 +289,7 @@ export default function Radar() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {mockOpportunities.map((opp) => (
+                {opportunities.map((opp) => (
                   <tr key={opp.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-4">
                       <div className="font-medium text-slate-900">{opp.title}</div>
@@ -248,9 +316,7 @@ export default function Radar() {
               </tbody>
             </table>
           </div>
-        )}
-
-        {view === 'sheets' && (
+        ) : (
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
@@ -283,7 +349,7 @@ export default function Radar() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {mockOpportunities.map((opp) => (
+                  {opportunities.map((opp) => (
                     <tr key={opp.id} className="hover:bg-slate-50">
                       <td className="px-3 py-2 font-mono">{opp.id}</td>
                       <td className="px-3 py-2 whitespace-nowrap">{formatDate(opp.dateAdded)}</td>
