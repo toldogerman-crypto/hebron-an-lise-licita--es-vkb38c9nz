@@ -11,6 +11,7 @@ import OpportunityDetail from './pages/OpportunityDetail'
 import Configuracoes from './pages/Configuracoes'
 import { MainProvider } from '@/stores/main'
 import { ConfigProvider } from '@/stores/config'
+import { AuthProvider } from '@/stores/auth'
 
 const App = () => (
   <BrowserRouter>
@@ -18,18 +19,20 @@ const App = () => (
       <Toaster />
       <Sonner />
       <ConfigProvider>
-        <MainProvider>
-          <Routes>
-            <Route element={<Layout />}>
-              <Route path="/" element={<Index />} />
-              <Route path="/nova-oportunidade" element={<NewOpportunity />} />
-              <Route path="/radar" element={<Radar />} />
-              <Route path="/oportunidade/:id" element={<OpportunityDetail />} />
-              <Route path="/configuracoes" element={<Configuracoes />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </MainProvider>
+        <AuthProvider>
+          <MainProvider>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/" element={<Index />} />
+                <Route path="/nova-oportunidade" element={<NewOpportunity />} />
+                <Route path="/radar" element={<Radar />} />
+                <Route path="/oportunidade/:id" element={<OpportunityDetail />} />
+                <Route path="/configuracoes" element={<Configuracoes />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </MainProvider>
+        </AuthProvider>
       </ConfigProvider>
     </TooltipProvider>
   </BrowserRouter>
