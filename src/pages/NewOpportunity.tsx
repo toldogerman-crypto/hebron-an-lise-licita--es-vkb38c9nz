@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import {
   Select,
@@ -17,8 +18,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { UploadCloud, File, X, BrainCircuit } from 'lucide-react'
+import { UploadCloud, File, X, BrainCircuit, AlertCircle } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
+import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { useNavigate } from 'react-router-dom'
 
@@ -41,14 +43,19 @@ export default function NewOpportunity() {
 
   const handleSubmit = () => {
     setStep(3)
-    // Simulate AI Processing
     setTimeout(() => {
-      toast({
-        title: 'Análise Concluída',
-        description: 'A IA finalizou a leitura do edital.',
-      })
-      navigate('/oportunidade/1')
+      toast({ title: 'Análise Concluída', description: 'A IA finalizou a leitura do edital.' })
+      navigate('/oportunidade/2')
     }, 3000)
+  }
+
+  const hasOnlyAviso = files.length === 1 && files[0]?.name.toLowerCase().includes('aviso')
+  const docClassification =
+    files.length === 0 ? 'Incompleto' : hasOnlyAviso ? 'Análise Preliminar' : 'Completo'
+  const classificationConfig = {
+    Completo: 'bg-emerald-100 text-emerald-700',
+    Incompleto: 'bg-rose-100 text-rose-700',
+    'Análise Preliminar': 'bg-amber-100 text-amber-700',
   }
 
   return (
@@ -56,11 +63,11 @@ export default function NewOpportunity() {
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-slate-900">Cadastrar Nova Licitação</h1>
         <p className="text-slate-500">
-          Preencha os dados básicos e faça o upload dos arquivos para análise.
+          Preencha os dados e faça o upload dos documentos para análise automatizada via IA.
         </p>
       </div>
 
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-4">
         <div className="flex-1 space-y-2">
           <div className="flex justify-between text-sm font-medium">
             <span className={step >= 1 ? 'text-primary' : 'text-slate-400'}>Dados Cadastrais</span>
@@ -94,6 +101,16 @@ export default function NewOpportunity() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
+                <Label htmlFor="city">Cidade</Label>
+                <Input id="city" placeholder="Ex: São Paulo" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="state">Estado (UF)</Label>
+                <Input id="state" placeholder="Ex: SP" maxLength={2} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <Label>Modalidade</Label>
                 <Select>
                   <SelectTrigger>
@@ -103,13 +120,32 @@ export default function NewOpportunity() {
                     <SelectItem value="pregao">Pregão Eletrônico</SelectItem>
                     <SelectItem value="concorrencia">Concorrência</SelectItem>
                     <SelectItem value="tomada">Tomada de Preços</SelectItem>
+                    <SelectItem value="dispensa">Dispensa de Licitação</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="portal">Portal (URL opcional)</Label>
+                <Label htmlFor="portal">Portal (URL)</Label>
                 <Input id="portal" type="url" placeholder="https://..." />
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="openingDate">Data de Abertura</Label>
+                <Input id="openingDate" type="datetime-local" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="responsible">Responsável</Label>
+                <Input id="responsible" placeholder="Ex: Carlos Eduardo" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="observations">Observações</Label>
+              <Textarea
+                id="observations"
+                placeholder="Observações relevantes sobre o edital..."
+                rows={3}
+              />
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-3 border-t p-4 bg-slate-50 rounded-b-xl">
@@ -124,7 +160,7 @@ export default function NewOpportunity() {
           <CardHeader>
             <CardTitle>Documentos do Edital</CardTitle>
             <CardDescription>
-              Faça o upload do Edital, Termo de Referência e Anexos.
+              Faça o upload do Edital, Termo de Referência e Anexos (PDF, DOCX, MD, TXT).
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -132,15 +168,33 @@ export default function NewOpportunity() {
               className="border-2 border-dashed border-slate-300 rounded-xl p-10 text-center hover:bg-slate-50 transition-colors cursor-pointer"
               onDragOver={(e) => e.preventDefault()}
               onDrop={handleDrop}
+              onClick={() => document.getElementById('file-input')?.click()}
             >
               <UploadCloud className="mx-auto h-12 w-12 text-slate-400 mb-4" />
               <p className="text-slate-600 font-medium">Arraste e solte os arquivos aqui</p>
-              <p className="text-sm text-slate-400 mt-1">ou clique para selecionar (PDF, DOCX)</p>
+              <p className="text-sm text-slate-400 mt-1">
+                ou clique para selecionar (PDF, DOCX, MD, TXT)
+              </p>
+              <input
+                id="file-input"
+                type="file"
+                multiple
+                accept=".pdf,.docx,.md,.txt"
+                className="hidden"
+                onChange={(e) =>
+                  e.target.files && setFiles((prev) => [...prev, ...Array.from(e.target.files!)])
+                }
+              />
             </div>
 
             {files.length > 0 && (
               <div className="space-y-3">
-                <Label>Arquivos Selecionados</Label>
+                <div className="flex items-center justify-between">
+                  <Label>Arquivos Selecionados ({files.length})</Label>
+                  <Badge className={classificationConfig[docClassification]}>
+                    {docClassification}
+                  </Badge>
+                </div>
                 {files.map((file, i) => (
                   <div
                     key={i}
@@ -155,6 +209,15 @@ export default function NewOpportunity() {
                     </Button>
                   </div>
                 ))}
+                {hasOnlyAviso && (
+                  <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <AlertCircle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700">
+                      Apenas "Aviso/Extrato" detectado. O sistema forçará o status "Análise
+                      Preliminar". Faça upload do edital completo para análise técnica.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
@@ -162,11 +225,7 @@ export default function NewOpportunity() {
             <Button variant="ghost" onClick={() => setStep(1)}>
               Voltar
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={files.length === 0}
-              className="bg-primary text-primary-foreground gap-2"
-            >
+            <Button onClick={handleSubmit} disabled={files.length === 0} className="gap-2">
               <BrainCircuit className="h-4 w-4" />
               Iniciar Análise Técnica
             </Button>

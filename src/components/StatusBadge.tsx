@@ -28,6 +28,7 @@ export function StatusBadge({ status, verdict, className }: StatusBadgeProps) {
     const statusConfig: Record<string, string> = {
       Recebida: 'bg-slate-200 text-slate-700',
       'Em Análise': 'bg-blue-100 text-blue-700 border-blue-200',
+      'Análise Preliminar': 'bg-purple-100 text-purple-700 border-purple-200',
       'Documentação Incompleta': 'bg-amber-100 text-amber-700 border-amber-200',
       'Analisar Mais': 'bg-amber-100 text-amber-700 border-amber-200',
       Entrar: 'bg-emerald-100 text-emerald-700 border-emerald-200',
