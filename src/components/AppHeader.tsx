@@ -16,6 +16,8 @@ export function AppHeader() {
         return 'Nova Oportunidade'
       case '/radar':
         return 'Radar de Licitações'
+      case '/configuracoes':
+        return 'Configurações'
       default:
         if (location.pathname.startsWith('/oportunidade/')) {
           return 'Detalhes da Oportunidade'

@@ -5,6 +5,8 @@ import { CheckCircle2, XCircle, Lock, AlertCircle, HelpCircle } from 'lucide-rea
 import { DecisionQuestion } from '@/lib/types'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import useConfigStore from '@/stores/config'
+import useMainStore from '@/stores/main'
 
 interface DecisionGateTabProps {
   questions?: DecisionQuestion[]
@@ -17,6 +19,19 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
     questions ? Object.fromEntries(questions.map((q) => [q.id, q.answer])) : {},
   )
   const [confirmed, setConfirmed] = useState(false)
+  const { config } = useConfigStore()
+  const { opportunities } = useMainStore()
+  const opp = opportunities.find((o) => o.id === oppId)
+
+  const getHint = (q: DecisionQuestion) => {
+    if (q.id === 2) return `Configurado: mínimo de ${config.minDeadlineDays} dias úteis`
+    if (q.id === 4) {
+      const marginStr =
+        opp?.estimatedMargin !== undefined ? `Margem estimada: ${opp.estimatedMargin}%. ` : ''
+      return `${marginStr}Mínimo configurado: ${config.minMargin}%`
+    }
+    return q.hint
+  }
 
   if (!questions) {
     return (
@@ -77,7 +92,7 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
                     <p className="text-sm font-medium text-slate-900">{q.question}</p>
                   </div>
                   <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-                    <HelpCircle className="h-3 w-3" /> {q.hint}
+                    <HelpCircle className="h-3 w-3" /> {getHint(q)}
                   </p>
                 </div>
                 {q.autoFilled && (

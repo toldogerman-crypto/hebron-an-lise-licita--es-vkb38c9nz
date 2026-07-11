@@ -32,11 +32,11 @@ export function getDaysUntil(dateString: string): number {
   return Math.ceil(diff / (1000 * 60 * 60 * 24))
 }
 
-export function getUrgencyLevel(dateString: string): UrgencyLevel {
+export function getUrgencyLevel(dateString: string, minDeadline: number = 3): UrgencyLevel {
   const days = getDaysUntil(dateString)
-  if (days > 7) return 'green'
-  if (days >= 3) return 'yellow'
-  return 'red'
+  if (days < minDeadline) return 'red'
+  if (days <= minDeadline + 4) return 'yellow'
+  return 'green'
 }
 
 export function formatDate(dateString: string): string {

@@ -1,4 +1,5 @@
 import { getDaysUntil, getUrgencyLevel, cn } from '@/lib/utils'
+import useConfigStore from '@/stores/config'
 
 interface UrgencySemaphoreProps {
   openingDate: string
@@ -6,8 +7,9 @@ interface UrgencySemaphoreProps {
 }
 
 export function UrgencySemaphore({ openingDate, className }: UrgencySemaphoreProps) {
+  const { config } = useConfigStore()
   const days = getDaysUntil(openingDate)
-  const level = getUrgencyLevel(openingDate)
+  const level = getUrgencyLevel(openingDate, config.minDeadlineDays)
 
   const config = {
     green: {
