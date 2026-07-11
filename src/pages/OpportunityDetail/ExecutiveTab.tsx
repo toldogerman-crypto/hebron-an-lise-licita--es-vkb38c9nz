@@ -1,146 +1,145 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { AlertTriangle, CheckCircle2, FileText, Lightbulb, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, Info, MapPin, Zap } from 'lucide-react'
 import { AnalysisResult } from '@/lib/types'
-import { ScoreBreakdown } from '@/components/ScoreBreakdown'
-import { formatCurrency, cn } from '@/lib/utils'
 
-interface ExecutiveTabProps {
-  analysis?: AnalysisResult
+function InfoRow({ label, value, source }: { label: string; value?: string; source?: string }) {
+  if (!value || value === 'NÃO LOCALIZADO NO EDITAL') return null
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-baseline justify-between py-3 border-b border-slate-100 last:border-0 gap-1">
+      <span className="text-sm font-medium text-slate-600 sm:w-1/3 shrink-0">{label}</span>
+      <div className="flex flex-col sm:items-end flex-1 sm:text-right">
+        <span className="text-sm font-semibold text-slate-900">{value}</span>
+        {source && (
+          <span className="text-[10px] text-blue-500 bg-blue-50 px-1 rounded w-max mt-1">
+            {source}
+          </span>
+        )}
+      </div>
+    </div>
+  )
 }
 
-export function ExecutiveTab({ analysis }: ExecutiveTabProps) {
-  if (!analysis) {
-    return <div className="mt-6 text-center py-12 text-slate-500">Análise não disponível.</div>
-  }
-
-  const severityConfig = {
-    high: 'text-rose-600 bg-rose-50',
-    medium: 'text-amber-600 bg-amber-50',
-    low: 'text-slate-600 bg-slate-50',
-  }
-  const totalValue = analysis.items.reduce((sum, i) => sum + i.estimatedValue * i.quantity, 0)
-
+export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
   return (
-    <div className="mt-6 space-y-6">
-      {analysis.alerts.length > 0 && (
-        <Card className="border-rose-200 bg-rose-50/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2 text-rose-700">
-              <ShieldAlert className="h-4 w-4" /> Alertas de Impugnação
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {analysis.alerts.map((alert, i) => (
-              <div
-                key={i}
-                className="flex items-start gap-3 p-3 bg-white border border-rose-100 rounded-lg"
-              >
-                <AlertTriangle className="h-4 w-4 text-rose-500 shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">{alert.clause}</p>
-                  <p className="text-sm text-slate-600 mt-1">{alert.description}</p>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-rose-600 font-medium">
-                      Prazo: {alert.deadline}
-                    </span>
-                    <span className="text-xs text-blue-500 bg-blue-50 px-1 rounded">
-                      {alert.source}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+    <div className="space-y-6">
+      {analysis.trava && (
+        <div className="bg-[#FEF2F2] border border-[#FECACA] p-4 rounded-xl flex gap-3">
+          <AlertTriangle className="text-[#B91C1C] shrink-0" />
+          <div>
+            <h4 className="font-bold text-[#7F1D1D]">Trava Eliminatória Ativada</h4>
+            <p className="text-sm text-[#991B1B] mt-1">{analysis.trava}</p>
+          </div>
+        </div>
       )}
 
+      <Card className="shadow-sm border-slate-200">
+        <CardContent className="p-6 text-slate-700 text-sm leading-relaxed">
+          {analysis.resumo_simples}
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-4 w-4 text-slate-500" /> 1. Sumário Executivo
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-3">
+            <CardTitle className="text-sm font-display text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+              <Info className="w-4 h-4 text-slate-500" /> Valores e Prazos
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 space-y-3">
-            <p className="text-sm text-slate-600 leading-relaxed">{analysis.summary}</p>
-            <ScoreBreakdown items={analysis.scoreItems} total={analysis.scoreTotal} />
+          <CardContent className="p-4 px-6">
+            <InfoRow
+              label="Valor Estimado"
+              value={analysis.valores_prazos.valor_estimado?.valor}
+              source={analysis.valores_prazos.valor_estimado?.fonte}
+            />
+            <InfoRow
+              label="Abertura das Propostas"
+              value={analysis.valores_prazos.data_abertura_propostas?.valor}
+              source={analysis.valores_prazos.data_abertura_propostas?.fonte}
+            />
+            <InfoRow
+              label="Prazo de Execução"
+              value={analysis.valores_prazos.prazo_entrega_execucao?.valor}
+              source={analysis.valores_prazos.prazo_entrega_execucao?.fonte}
+            />
+            <InfoRow
+              label="Prazo de Pagamento"
+              value={analysis.valores_prazos.prazo_pagamento?.valor}
+              source={analysis.valores_prazos.prazo_pagamento?.fonte}
+            />
+            <InfoRow
+              label="Vigência Contratual"
+              value={analysis.valores_prazos.vigencia_contrato?.valor}
+              source={analysis.valores_prazos.vigencia_contrato?.fonte}
+            />
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3 border-b border-slate-100 bg-slate-50/50">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-emerald-500" /> 2. Análise Técnica
+        <Card className="shadow-sm border-slate-200">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-3">
+            <CardTitle className="text-sm font-display text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+              <Zap className="w-4 h-4 text-slate-500" /> Compatibilidade Hebron
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 space-y-3">
-            <p className="text-sm text-slate-600 leading-relaxed">{analysis.technicalAnalysis}</p>
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <div className="bg-slate-50 rounded-lg p-3">
-                <span className="text-xs text-slate-500">Itens Extraídos</span>
-                <p className="text-lg font-bold text-slate-900">{analysis.items.length}</p>
-              </div>
-              <div className="bg-slate-50 rounded-lg p-3">
-                <span className="text-xs text-slate-500">Valor Total</span>
-                <p className="text-lg font-bold text-slate-900">{formatCurrency(totalValue)}</p>
-              </div>
+          <CardContent className="p-4 px-6">
+            <div className="py-3 border-b border-slate-100">
+              <span
+                className={`text-sm font-bold ${analysis.compatibilidade.cnae_compativel ? 'text-emerald-600' : 'text-rose-600'}`}
+              >
+                {analysis.compatibilidade.cnae_compativel
+                  ? '✓ CNAE Compatível'
+                  : '✗ CNAE Incompatível'}
+              </span>
+              <p className="text-xs text-slate-500 mt-1">{analysis.compatibilidade.cnae_match}</p>
             </div>
+            <InfoRow label="Segmento" value={analysis.fit_estrategico.segmento} />
+            <InfoRow label="Requer Estoque" value={analysis.fit_estrategico.opera_sem_estoque} />
+            <InfoRow
+              label="Benefício ME/EPP"
+              value={analysis.beneficio_epp.valor}
+              source={analysis.beneficio_epp.fonte}
+            />
           </CardContent>
         </Card>
 
-        <Card className="shadow-sm border-rose-200">
-          <CardHeader className="pb-3 border-b border-rose-100 bg-rose-50/50">
-            <CardTitle className="text-base flex items-center gap-2 text-rose-700">
-              <AlertTriangle className="h-4 w-4" /> 3. Riscos Mapeados
+        <Card className="shadow-sm border-slate-200 md:col-span-2">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-3">
+            <CardTitle className="text-sm font-display text-slate-800 flex items-center gap-2 uppercase tracking-wide">
+              <MapPin className="w-4 h-4 text-slate-500" /> Exigências e Local
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4 space-y-2">
-            {analysis.risks.map((risk, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <span
-                  className={cn(
-                    'text-[10px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0',
-                    severityConfig[risk.severity],
-                  )}
-                >
-                  {risk.category}
-                </span>
-                <div className="flex-1">
-                  <p className="text-sm text-slate-600">{risk.description}</p>
-                  <span className="text-xs text-blue-500">{risk.source}</span>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm bg-primary text-primary-foreground border-primary">
-          <CardHeader className="pb-3 border-b border-primary/20">
-            <CardTitle className="text-base flex items-center gap-2 text-white">
-              <Lightbulb className="h-4 w-4" /> 4. Recomendações Práticas
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4 space-y-3">
-            <p className="text-sm text-slate-300 leading-relaxed">{analysis.recommendations}</p>
-            <div className="bg-white/10 rounded-lg p-3">
-              <p className="text-xs text-slate-300 uppercase font-bold mb-2">Cronograma Reverso</p>
-              <div className="space-y-1.5">
-                {[
-                  'Revisão Jurídica — 05/08',
-                  'Fechamento de Preços — 10/08',
-                  'Upload de Propostas — 13/08',
-                  'Sessão Pública — 01/08',
-                ].map((step, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-white">
-                    <span className="w-1.5 h-1.5 bg-white/60 rounded-full"></span>
-                    {step}
-                  </div>
-                ))}
-              </div>
-            </div>
+          <CardContent className="p-4 px-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
+            <InfoRow
+              label="Atestado Técnico"
+              value={analysis.exigencias.atestado_tecnico?.valor}
+              source={analysis.exigencias.atestado_tecnico?.fonte}
+            />
+            <InfoRow
+              label="Garantia"
+              value={analysis.exigencias.garantia?.valor}
+              source={analysis.exigencias.garantia?.fonte}
+            />
+            <InfoRow
+              label="Local de Entrega"
+              value={analysis.local_entrega.valor}
+              source={analysis.local_entrega.fonte}
+            />
+            <InfoRow
+              label="Vistoria"
+              value={analysis.exigencias.vistoria?.valor}
+              source={analysis.exigencias.vistoria?.fonte}
+            />
           </CardContent>
         </Card>
       </div>
+
+      {analysis.recomendacao && (
+        <div className="bg-[#1F2937] text-white p-6 rounded-xl shadow-sm">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+            Recomendação do Analista (Camada 1)
+          </h4>
+          <p className="text-sm leading-relaxed text-slate-200">{analysis.recomendacao}</p>
+        </div>
+      )}
     </div>
   )
 }

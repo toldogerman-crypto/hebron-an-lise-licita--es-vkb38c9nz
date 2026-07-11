@@ -17,7 +17,16 @@ export function formatCurrency(value: number): string {
 }
 
 export function getDaysUntil(dateString: string): number {
-  const target = new Date(dateString)
+  if (!dateString) return 0
+  let target: Date
+  if (dateString.includes('/')) {
+    const [datePart, timePart] = dateString.split(' ')
+    const [day, month, year] = datePart.split('/')
+    target = new Date(`${year}-${month}-${day}T${timePart || '00:00:00'}`)
+  } else {
+    target = new Date(dateString)
+  }
+  if (isNaN(target.getTime())) return 0
   const now = new Date()
   const diff = target.getTime() - now.getTime()
   return Math.ceil(diff / (1000 * 60 * 60 * 24))

@@ -35,9 +35,9 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
 
   const verdict = computeVerdict()
   const verdictConfig = {
-    ENTRAR: 'bg-emerald-500 text-white',
-    'NÃO ENTRAR': 'bg-rose-500 text-white',
-    'ANALISAR MAIS': 'bg-amber-500 text-white',
+    ENTRAR: 'bg-[#0D6E3F] text-white',
+    'NÃO ENTRAR': 'bg-[#8B1A1A] text-white',
+    'ANALISAR MAIS': 'bg-[#B8860B] text-white',
   }
 
   const handleConfirm = () => {
@@ -92,7 +92,7 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
                   variant={answers[q.id] === true ? 'default' : 'outline'}
                   className={cn(
                     'gap-1',
-                    answers[q.id] === true && 'bg-emerald-500 hover:bg-emerald-600',
+                    answers[q.id] === true && 'bg-[#0D6E3F] hover:bg-[#065F46] text-white',
                   )}
                   disabled={q.autoFilled}
                   onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: true }))}
@@ -104,7 +104,7 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
                   variant={answers[q.id] === false ? 'default' : 'outline'}
                   className={cn(
                     'gap-1',
-                    answers[q.id] === false && 'bg-rose-500 hover:bg-rose-600',
+                    answers[q.id] === false && 'bg-[#8B1A1A] hover:bg-[#7F1D1D] text-white',
                   )}
                   disabled={q.autoFilled}
                   onClick={() => setAnswers((prev) => ({ ...prev, [q.id]: false }))}
@@ -121,9 +121,14 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
         <CardContent className="p-6">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
-              <p className="text-sm text-slate-500 mb-1">Veredicto Calculado</p>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Veredicto Calculado
+              </p>
               <span
-                className={cn('text-2xl font-black px-4 py-2 rounded-lg', verdictConfig[verdict])}
+                className={cn(
+                  'text-2xl font-black font-display px-4 py-2 rounded-lg',
+                  verdictConfig[verdict],
+                )}
               >
                 {verdict}
               </span>
@@ -132,10 +137,14 @@ export function DecisionGateTab({ questions, oppId }: DecisionGateTabProps) {
               onClick={handleConfirm}
               disabled={!allAnswered || confirmed}
               size="lg"
-              className="gap-2"
+              className={cn(
+                'gap-2 font-display font-semibold',
+                confirmed ? 'bg-slate-100 text-slate-500' : 'bg-[#2563EB] hover:bg-blue-700',
+              )}
+              variant={confirmed ? 'outline' : 'default'}
             >
               <CheckCircle2 className="h-5 w-5" />{' '}
-              {confirmed ? 'Decisão Confirmada' : 'Confirmar Decisão'}
+              {confirmed ? 'Decisão Registrada' : 'Gravar Decisão'}
             </Button>
           </div>
           {!allAnswered && (

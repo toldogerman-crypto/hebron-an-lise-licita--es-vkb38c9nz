@@ -1,53 +1,42 @@
 import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, Share, Download, FileText } from 'lucide-react'
+import { ArrowLeft, BrainCircuit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/StatusBadge'
-import { UrgencySemaphore } from '@/components/UrgencySemaphore'
 import useMainStore from '@/stores/main'
 import { ExecutiveTab } from './ExecutiveTab'
-import { ChecklistTab } from './ChecklistTab'
-import { TimelineTab } from './TimelineTab'
 import { ItemsTab } from './ItemsTab'
+import { DeepAnalysisTab } from './DeepAnalysisTab'
 import { DecisionGateTab } from './DecisionGateTab'
+import { cn } from '@/lib/utils'
 
 export default function OpportunityDetail() {
   const { id } = useParams()
-  const { opportunities, analysis: analysisMap, decisionGates } = useMainStore()
+  const { opportunities } = useMainStore()
   const opp = opportunities.find((o) => o.id === id)
 
-  if (!opp) {
+  if (!opp || !opp.analysis) {
     return (
       <div className="space-y-6 pb-20">
         <Button variant="ghost" size="sm" asChild className="-ml-2 text-slate-500">
           <Link to="/radar">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Radar
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
           </Link>
         </Button>
-        <div className="p-12 flex flex-col items-center justify-center text-center border border-slate-200 rounded-xl bg-white">
-          <FileText className="h-12 w-12 text-slate-300 mb-4" />
-          <h2 className="text-lg font-semibold text-slate-700">Oportunidade não encontrada</h2>
-          <p className="text-sm text-slate-500 mt-1">
-            Esta oportunidade pode ter sido excluída ou não existe.
-          </p>
-          <Button asChild className="mt-4">
-            <Link to="/radar">Voltar ao Radar</Link>
-          </Button>
+        <div className="p-12 text-center border rounded-xl bg-white">
+          Oportunidade não encontrada.
         </div>
       </div>
     )
   }
 
-  const analysis = analysisMap[opp.id]
-  const decisionGate = decisionGates[opp.id]
+  const { analysis } = opp
 
   const tabConfig = [
     { value: 'executive', label: 'Parecer Executivo' },
-    { value: 'items', label: 'Itens & Margem' },
-    { value: 'checklist', label: 'Checklist' },
+    { value: 'items', label: 'Itens do Edital' },
+    { value: 'deep', label: 'Riscos & Plano (Deep)' },
     { value: 'gate', label: 'Portão de Decisão' },
-    { value: 'timeline', label: 'Cronograma' },
-    { value: 'docs', label: 'Arquivos (3)' },
   ]
 
   return (
@@ -55,81 +44,62 @@ export default function OpportunityDetail() {
       <div className="flex items-center justify-between">
         <Button variant="ghost" size="sm" asChild className="-ml-2 text-slate-500">
           <Link to="/radar">
-            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Radar
+            <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Pipeline
           </Link>
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Share className="h-4 w-4" /> Compartilhar
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="h-4 w-4" /> Exportar PDF
-          </Button>
-        </div>
       </div>
 
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+      <div
+        className={cn(
+          'p-6 rounded-xl border shadow-sm relative overflow-hidden',
+          analysis.veredicto === 'ENTRAR'
+            ? 'bg-[#F0FDF4] border-[#A7F3D0]'
+            : analysis.veredicto === 'ANALISAR MAIS'
+              ? 'bg-[#FFFBEB] border-[#FDE68A]'
+              : 'bg-[#FEF2F2] border-[#FECACA]',
+        )}
+      >
         <div className="absolute top-0 right-0 p-6 flex flex-col items-end gap-3 z-10">
-          <StatusBadge verdict={opp.verdict} className="text-sm px-4 py-1" />
-          {analysis && (
-            <>
-              <div className="bg-slate-50 border border-slate-100 rounded-lg p-2 text-center shadow-sm">
-                <span className="block text-[10px] uppercase text-slate-500 font-bold">
-                  Hebron Score
-                </span>
-                <span className="block text-2xl font-black text-primary leading-none">
-                  {analysis.scoreTotal}%
-                </span>
-              </div>
-              <UrgencySemaphore openingDate={opp.openingDate} />
-            </>
-          )}
-          {analysis && analysis.eliminationLocks.length > 0 && (
-            <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 max-w-[200px]">
-              <span className="block text-[10px] uppercase text-rose-600 font-bold mb-1">
-                Bloqueios
-              </span>
-              {analysis.eliminationLocks.map((lock, i) => (
-                <span key={i} className="block text-xs text-rose-700">
-                  {lock}
-                </span>
-              ))}
-            </div>
-          )}
+          <StatusBadge verdict={analysis.veredicto} className="text-sm px-4 py-1" />
+          <div className="bg-white border border-slate-100 rounded-lg p-2 text-center shadow-sm min-w-[100px]">
+            <span className="block text-[10px] uppercase text-slate-500 font-bold font-display">
+              Hebron Score
+            </span>
+            <span
+              className={cn(
+                'block text-2xl font-black font-display leading-none',
+                analysis.veredicto === 'ENTRAR' ? 'text-[#065F46]' : 'text-[#7F1D1D]',
+              )}
+            >
+              {analysis.score}
+            </span>
+          </div>
         </div>
 
         <div className="max-w-3xl pr-32 relative z-10">
           <div className="flex items-center gap-3 mb-3 flex-wrap">
-            <span className="text-sm font-semibold text-slate-500 bg-slate-100 px-2 py-1 rounded">
+            <span className="text-sm font-bold font-display text-slate-700 bg-white/60 px-2 py-1 rounded border border-black/5">
               {opp.number}
             </span>
-            <span className="text-sm text-slate-500">{opp.organ}</span>
-            <span className="text-sm text-slate-500">
+            <span className="text-sm font-medium text-slate-700">{opp.organ}</span>
+            <span className="text-sm text-slate-600">
               • {opp.city}/{opp.state}
             </span>
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 mb-4 leading-tight">
+          <h1 className="text-2xl font-bold font-display text-slate-900 mb-4 leading-tight">
             {opp.title}
           </h1>
-          <div className="flex items-center gap-6 text-sm flex-wrap">
+          <div className="flex items-center gap-6 text-sm flex-wrap text-slate-700">
             <div>
-              <span className="text-slate-500">Modalidade:</span>{' '}
-              <span className="font-medium text-slate-900">{opp.modality}</span>
-            </div>
-            <div>
-              <span className="text-slate-500">Responsável:</span>{' '}
-              <span className="font-medium text-slate-900">{opp.responsible}</span>
+              <span className="opacity-70">Abertura:</span>{' '}
+              <span className="font-medium">
+                {analysis.valores_prazos.data_abertura_propostas?.valor}
+              </span>
             </div>
             {opp.portal && (
               <div>
-                <a
-                  href={opp.portal}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Ver Portal ↗
-                </a>
+                <span className="opacity-70">Portal:</span>{' '}
+                <span className="font-medium">{opp.portal}</span>
               </div>
             )}
           </div>
@@ -143,47 +113,26 @@ export default function OpportunityDetail() {
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-4 pb-3 pt-2 font-medium text-sm whitespace-nowrap"
+                className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-[#2563EB] data-[state=active]:text-[#2563EB] rounded-none px-4 pb-3 pt-2 font-semibold font-display text-sm whitespace-nowrap text-slate-500"
               >
+                {tab.value === 'deep' && <BrainCircuit className="w-4 h-4 mr-2 inline" />}
                 {tab.label}
               </TabsTrigger>
             ))}
           </TabsList>
         </div>
 
-        <TabsContent value="executive" className="animate-fade-in-up outline-none">
+        <TabsContent value="executive" className="animate-fade-in-up outline-none mt-6">
           <ExecutiveTab analysis={analysis} />
         </TabsContent>
-        <TabsContent value="items" className="animate-fade-in-up outline-none">
+        <TabsContent value="items" className="animate-fade-in-up outline-none mt-6">
           <ItemsTab analysis={analysis} />
         </TabsContent>
-        <TabsContent value="checklist" className="animate-fade-in-up outline-none">
-          <ChecklistTab analysis={analysis} />
+        <TabsContent value="deep" className="animate-fade-in-up outline-none mt-6">
+          <DeepAnalysisTab opp={opp} />
         </TabsContent>
-        <TabsContent value="gate" className="animate-fade-in-up outline-none">
-          <DecisionGateTab questions={decisionGate} oppId={opp.id} />
-        </TabsContent>
-        <TabsContent value="timeline" className="animate-fade-in-up outline-none">
-          <TimelineTab />
-        </TabsContent>
-        <TabsContent value="docs" className="animate-fade-in-up outline-none mt-6">
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">Documentos da Licitação</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {['Edital Completo', 'Termo de Referência', 'Minuta do Contrato'].map((doc, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-4 border border-slate-100 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
-                >
-                  <FileText className="h-8 w-8 text-rose-500 shrink-0" />
-                  <div className="overflow-hidden">
-                    <p className="text-sm font-medium text-slate-900 truncate">{doc}</p>
-                    <p className="text-xs text-slate-500">{['2.4 MB', '1.1 MB', '0.8 MB'][i]}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        <TabsContent value="gate" className="animate-fade-in-up outline-none mt-6">
+          <DecisionGateTab questions={opp.decisionGate} oppId={opp.id} />
         </TabsContent>
       </Tabs>
     </div>
