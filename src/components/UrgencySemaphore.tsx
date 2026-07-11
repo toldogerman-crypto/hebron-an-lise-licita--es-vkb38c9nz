@@ -11,7 +11,7 @@ export function UrgencySemaphore({ openingDate, className }: UrgencySemaphorePro
   const days = getDaysUntil(openingDate)
   const level = getUrgencyLevel(openingDate, config.minDeadlineDays)
 
-  const config = {
+  const levelStyles = {
     green: {
       icon: '🟢',
       text: 'text-emerald-700',
@@ -21,7 +21,7 @@ export function UrgencySemaphore({ openingDate, className }: UrgencySemaphorePro
     yellow: { icon: '🟡', text: 'text-amber-700', bg: 'bg-amber-50', border: 'border-amber-200' },
     red: { icon: '🔴', text: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-200' },
   }
-  const c = config[level]
+  const c = levelStyles[level]
 
   return (
     <div
