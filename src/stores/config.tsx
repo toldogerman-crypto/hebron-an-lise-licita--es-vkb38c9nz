@@ -13,17 +13,27 @@ const DEFAULT_CONFIG: SystemConfig = {
   minMargin: 15,
   minDeadlineDays: 3,
   priorityCNAEs: [
-    '6201-5/01 - Desenvolvimento de Software',
-    '6202-3/01 - Consultoria em TI',
-    '6311-9/00 - Tratamento de Dados',
+    '85.99-6-04 - Treinamento em desenvolvimento profissional',
+    '70.20-4-00 - Consultoria em gestão empresarial',
+    '71.12-0-00 - Serviços de engenharia',
+    '62.09-1-00 - Suporte técnico de TI',
+    '46.49-4-08 - Comércio de produtos de higiene e limpeza',
+    '47.42-3-00 - Comércio varejista de material elétrico',
   ],
-  prioritySegments: ['Tecnologia', 'Higiene', 'Mobiliário', 'Consultoria'],
+  prioritySegments: [
+    'Treinamentos',
+    'Consultoria',
+    'Material de Limpeza/Higiene',
+    'Equipamentos Elétricos',
+    'TI',
+  ],
   exclusionRules: [
-    'Engenharia Civil Pesada',
+    'Engenharia Civil Pesada (Obras Estruturais)',
     'Combustíveis e Lubrificantes',
     'Licitação Internacional',
+    'Medicamentos Complexos',
   ],
-  priorityRegions: ['Sul', 'Sudeste'],
+  priorityRegions: ['SC', 'Sul', 'Sudeste'],
 }
 
 const STORAGE_KEY = 'hebron-config-v1'

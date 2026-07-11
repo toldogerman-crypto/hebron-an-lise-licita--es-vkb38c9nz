@@ -11,14 +11,34 @@ import {
   SidebarGroupContent,
   useSidebar,
 } from '@/components/ui/sidebar'
-import { LayoutDashboard, PlusCircle, Radar, Settings, ShieldCheck, LogOut } from 'lucide-react'
+import {
+  LayoutDashboard,
+  PlusCircle,
+  Radar,
+  Settings,
+  ShieldCheck,
+  LogOut,
+  Briefcase,
+  Scale,
+  Landmark,
+} from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
+import useMainStore from '@/stores/main'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { UserRole } from '@/lib/types'
 
 export function AppSidebar() {
   const location = useLocation()
   const { state } = useSidebar()
   const isCollapsed = state === 'collapsed'
+  const { role, setRole } = useMainStore()
 
   const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
@@ -29,7 +49,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r border-slate-200 shadow-sm">
-      <SidebarHeader className="border-b border-slate-100 p-4 h-16 flex items-center justify-center">
+      <SidebarHeader className="border-b border-slate-100 p-4 flex flex-col gap-4">
         <div className="flex items-center gap-3 w-full overflow-hidden">
           <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shrink-0">
             <ShieldCheck size={24} />
@@ -45,6 +65,32 @@ export function AppSidebar() {
             </div>
           )}
         </div>
+        {!isCollapsed && (
+          <div className="px-1">
+            <Select value={role} onValueChange={(val) => setRole(val as UserRole)}>
+              <SelectTrigger className="h-8 text-xs bg-slate-50 border-slate-200">
+                <SelectValue placeholder="Perfil de Visão" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="w-3 h-3" /> Gestor / Admin
+                  </div>
+                </SelectItem>
+                <SelectItem value="legal">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-3 h-3" /> Jurídico
+                  </div>
+                </SelectItem>
+                <SelectItem value="financial">
+                  <div className="flex items-center gap-2">
+                    <Landmark className="w-3 h-3" /> Financeiro
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent>

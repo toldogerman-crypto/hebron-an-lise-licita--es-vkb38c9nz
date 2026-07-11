@@ -93,6 +93,14 @@ export interface DecisionQuestion {
   hint: string
 }
 
+export interface ChecklistItem {
+  id: string
+  task: string
+  completed: boolean
+}
+
+export type UserRole = 'admin' | 'legal' | 'financial'
+
 export interface Opportunity {
   id: string
   title: string
@@ -122,4 +130,5 @@ export interface Opportunity {
   decisionGate?: DecisionQuestion[]
   radarSynced: boolean
   estimatedMargin?: number
+  checklist?: ChecklistItem[]
 }

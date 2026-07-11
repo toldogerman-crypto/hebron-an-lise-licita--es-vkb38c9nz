@@ -8,11 +8,12 @@ import { ExecutiveTab } from './ExecutiveTab'
 import { ItemsTab } from './ItemsTab'
 import { DeepAnalysisTab } from './DeepAnalysisTab'
 import { DecisionGateTab } from './DecisionGateTab'
+import { ChecklistTab } from './ChecklistTab'
 import { cn } from '@/lib/utils'
 
 export default function OpportunityDetail() {
   const { id } = useParams()
-  const { opportunities } = useMainStore()
+  const { opportunities, role } = useMainStore()
   const opp = opportunities.find((o) => o.id === id)
 
   if (!opp || !opp.analysis) {
@@ -32,12 +33,16 @@ export default function OpportunityDetail() {
 
   const { analysis } = opp
 
+  const isLegal = role === 'legal'
+  const isFinancial = role === 'financial'
+
   const tabConfig = [
-    { value: 'executive', label: 'Parecer Executivo' },
-    { value: 'items', label: 'Itens do Edital' },
-    { value: 'deep', label: 'Riscos & Plano (Deep)' },
-    { value: 'gate', label: 'Portão de Decisão' },
-  ]
+    { value: 'executive', label: 'Parecer Executivo', hide: isFinancial },
+    { value: 'items', label: 'Itens do Edital', hide: false },
+    { value: 'deep', label: 'Riscos & Plano', hide: false },
+    { value: 'gate', label: 'Portão de Decisão', hide: isLegal || isFinancial },
+    { value: 'checklist', label: 'Checklist', hide: false },
+  ].filter((t) => !t.hide)
 
   return (
     <div className="space-y-6 pb-20">
@@ -106,7 +111,18 @@ export default function OpportunityDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="executive" className="w-full">
+      {isLegal && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2 rounded-lg text-sm mb-4 font-medium flex items-center gap-2">
+          Visão Jurídica Ativa: Foco em Cláusulas Restritivas, Impugnações e Riscos Documentais.
+        </div>
+      )}
+      {isFinancial && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-2 rounded-lg text-sm mb-4 font-medium flex items-center gap-2">
+          Visão Financeira Ativa: Foco em Margem de Lucro, Preço Estimado e Risco de Capital.
+        </div>
+      )}
+
+      <Tabs defaultValue={tabConfig[0].value} className="w-full">
         <div className="overflow-x-auto pb-2 border-b border-slate-200">
           <TabsList className="bg-transparent p-0 justify-start w-max border-0 h-auto">
             {tabConfig.map((tab) => (
@@ -131,8 +147,13 @@ export default function OpportunityDetail() {
         <TabsContent value="deep" className="animate-fade-in-up outline-none mt-6">
           <DeepAnalysisTab opp={opp} />
         </TabsContent>
-        <TabsContent value="gate" className="animate-fade-in-up outline-none mt-6">
-          <DecisionGateTab questions={opp.decisionGate} oppId={opp.id} />
+        {!isLegal && !isFinancial && (
+          <TabsContent value="gate" className="animate-fade-in-up outline-none mt-6">
+            <DecisionGateTab questions={opp.decisionGate} oppId={opp.id} />
+          </TabsContent>
+        )}
+        <TabsContent value="checklist" className="animate-fade-in-up outline-none mt-6">
+          <ChecklistTab opp={opp} />
         </TabsContent>
       </Tabs>
     </div>

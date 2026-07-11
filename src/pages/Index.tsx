@@ -64,10 +64,10 @@ export default function Index() {
                   Nenhuma oportunidade encontrada
                 </h3>
                 <p className="text-sm text-slate-500 max-w-md">
-                  Não há atividades recentes. Cadastre uma nova licitação para começar.
+                  Nenhum edital analisado ainda. O sistema está aguardando seus dados reais.
                 </p>
                 <Button asChild className="mt-4 bg-[#2563EB]">
-                  <Link to="/nova-oportunidade">Cadastrar Oportunidade</Link>
+                  <Link to="/nova-oportunidade">Fazer Upload de Edital</Link>
                 </Button>
               </div>
             </Card>

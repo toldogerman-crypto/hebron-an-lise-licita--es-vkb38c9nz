@@ -1,13 +1,15 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from 'react'
-import { Opportunity } from '@/lib/types'
-import { mockOpportunities } from '@/lib/mock-data'
+import { Opportunity, UserRole } from '@/lib/types'
 
-const STORAGE_KEY = 'hebron-pipeline-v1'
+const STORAGE_KEY = 'hebron-pipeline-v2' // bumped version to clear old mocks
 
 interface MainStoreValue {
   opportunities: Opportunity[]
+  role: UserRole
+  setRole: (role: UserRole) => void
   addOpportunity: (opp: Opportunity) => void
   updateOpportunity: (id: string, data: Partial<Opportunity>) => void
+  deleteOpportunity: (id: string) => void
   deleteAllOpportunities: () => void
 }
 
@@ -15,18 +17,23 @@ const MainContext = createContext<MainStoreValue | null>(null)
 
 export function MainProvider({ children }: { children: ReactNode }) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([])
+  const [role, setRole] = useState<UserRole>('admin')
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
     try {
       const data = localStorage.getItem(STORAGE_KEY)
+      const roleData = localStorage.getItem('hebron-role-v1')
       if (data) {
         setOpportunities(JSON.parse(data))
       } else {
-        setOpportunities(mockOpportunities)
+        setOpportunities([])
+      }
+      if (roleData) {
+        setRole(roleData as UserRole)
       }
     } catch (e) {
-      setOpportunities(mockOpportunities)
+      setOpportunities([])
     } finally {
       setIsLoaded(true)
     }
@@ -35,8 +42,9 @@ export function MainProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLoaded) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(opportunities))
+      localStorage.setItem('hebron-role-v1', role)
     }
-  }, [opportunities, isLoaded])
+  }, [opportunities, role, isLoaded])
 
   const addOpportunity = (opp: Opportunity) => {
     setOpportunities((prev) => [opp, ...prev])
@@ -46,13 +54,25 @@ export function MainProvider({ children }: { children: ReactNode }) {
     setOpportunities((prev) => prev.map((o) => (o.id === id ? { ...o, ...data } : o)))
   }
 
+  const deleteOpportunity = (id: string) => {
+    setOpportunities((prev) => prev.filter((o) => o.id !== id))
+  }
+
   const deleteAllOpportunities = () => {
     setOpportunities([])
   }
 
   return (
     <MainContext.Provider
-      value={{ opportunities, addOpportunity, updateOpportunity, deleteAllOpportunities }}
+      value={{
+        opportunities,
+        role,
+        setRole,
+        addOpportunity,
+        updateOpportunity,
+        deleteOpportunity,
+        deleteAllOpportunities,
+      }}
     >
       {isLoaded ? children : null}
     </MainContext.Provider>

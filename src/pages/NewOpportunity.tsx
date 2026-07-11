@@ -84,10 +84,17 @@ export default function NewOpportunity() {
       state: result.identificacao.municipio_uf?.valor?.split('/')[1] || '',
       city: result.identificacao.municipio_uf?.valor?.split('/')[0] || '',
       portal: result.identificacao.portal?.valor || '',
-      responsible: 'Analista Sênior',
+      responsible: 'Gestor (Hebron)',
       observations: result.resumo_simples,
       radarSynced: false,
       analysis: result,
+      checklist: [
+        { id: '1', task: 'Analisar restrições do edital (Jurídico)', completed: false },
+        { id: '2', task: 'Reunir atestados de capacidade técnica', completed: false },
+        { id: '3', task: 'Pesquisa de preço de mercado', completed: false },
+        { id: '4', task: 'Validar margem e viabilidade financeira', completed: false },
+        { id: '5', task: 'Cadastro da proposta no portal', completed: false },
+      ],
     })
     toast({
       title: 'Adicionado ao Radar!',

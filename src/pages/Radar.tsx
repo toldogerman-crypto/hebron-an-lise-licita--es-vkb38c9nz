@@ -14,7 +14,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { StatusBadge } from '@/components/StatusBadge'
-import { Trash2, Plus, Target, Archive, RefreshCcw } from 'lucide-react'
+import { Trash2, Plus, Target, Archive, RefreshCcw, MoreVertical } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Link } from 'react-router-dom'
 import useMainStore from '@/stores/main'
@@ -29,6 +29,12 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 const PIPELINE_COLS = [
   {
@@ -49,8 +55,19 @@ const PIPELINE_COLS = [
 
 export default function Radar() {
   const { toast } = useToast()
-  const { opportunities, updateOpportunity, deleteAllOpportunities } = useMainStore()
+  const { opportunities, updateOpportunity, deleteAllOpportunities, deleteOpportunity } =
+    useMainStore()
   const [modalProc, setModalProc] = useState<Opportunity | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<string | null>(null)
+
+  const confirmDelete = (id: string) => {
+    deleteOpportunity(id)
+    setItemToDelete(null)
+    toast({
+      title: 'Oportunidade removida',
+      description: 'O edital foi excluído com sucesso.',
+    })
+  }
 
   const handleDeleteAll = () => {
     deleteAllOpportunities()
@@ -186,12 +203,33 @@ export default function Radar() {
                             >
                               {p.number}
                             </Link>
-                            {p.score > 0 && (
-                              <StatusBadge
-                                verdict={p.verdict}
-                                className="text-[10px] px-1.5 py-0 rounded"
-                              />
-                            )}
+                            <div className="flex items-center gap-1 shrink-0">
+                              {p.score > 0 && (
+                                <StatusBadge
+                                  verdict={p.verdict}
+                                  className="text-[10px] px-1.5 py-0 rounded"
+                                />
+                              )}
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5 text-slate-400 hover:text-slate-600 -mr-1"
+                                  >
+                                    <MoreVertical className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-32">
+                                  <DropdownMenuItem
+                                    className="text-rose-600 focus:text-rose-700 focus:bg-rose-50"
+                                    onClick={() => setItemToDelete(p.id)}
+                                  >
+                                    <Trash2 className="w-3 h-3 mr-2" /> Excluir
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                           <div className="text-[11.5px] text-slate-500 mb-2 truncate">
                             {p.organ} • {p.city}
@@ -232,9 +270,34 @@ export default function Radar() {
         </TabsContent>
 
         <TabsContent value="historico" className="mt-0 outline-none">
-          <HistoricoTab opportunities={opportunities} onEdit={(o) => setModalProc(o)} />
+          <HistoricoTab
+            opportunities={opportunities}
+            onEdit={(o) => setModalProc(o)}
+            onDelete={(id) => setItemToDelete(id)}
+          />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!itemToDelete} onOpenChange={(o) => !o && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir oportunidade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta oportunidade? Os dados não poderão ser
+              recuperados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => itemToDelete && confirmDelete(itemToDelete)}
+              className="bg-rose-600 hover:bg-rose-700"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {modalProc && (
         <ResultModal
@@ -258,9 +321,11 @@ export default function Radar() {
 function HistoricoTab({
   opportunities,
   onEdit,
+  onDelete,
 }: {
   opportunities: Opportunity[]
   onEdit: (o: Opportunity) => void
+  onDelete: (id: string) => void
 }) {
   const fin = opportunities.filter((o) => o.status === 'finalizado')
   const ganhos = fin.filter((o) => o.resultado === 'ganhou')
@@ -331,14 +396,24 @@ function HistoricoTab({
               {p.valorHomologado && (
                 <div className="text-sm font-bold text-slate-900">R$ {p.valorHomologado}</div>
               )}
-              <Button
-                variant="link"
-                size="sm"
-                className="h-auto p-0 text-slate-400 mt-1"
-                onClick={() => onEdit(p)}
-              >
-                Editar
-              </Button>
+              <div className="flex items-center gap-3 justify-end mt-1">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-slate-400"
+                  onClick={() => onEdit(p)}
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-rose-400 hover:text-rose-600"
+                  onClick={() => onDelete(p.id)}
+                >
+                  Excluir
+                </Button>
+              </div>
             </div>
           </div>
         ))}

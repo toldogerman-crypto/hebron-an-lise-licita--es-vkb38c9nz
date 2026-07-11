@@ -30,8 +30,8 @@ export function AppHeader() {
     <div className="sticky top-0 z-20 w-full flex flex-col">
       {!import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SKIP_CLOUD && (
         <div className="bg-amber-100 text-amber-800 text-xs px-4 py-1.5 text-center font-medium border-b border-amber-200 shadow-sm">
-          ⚠️ Aviso: Backend não conectado. Os dados do pipeline estão salvos apenas no armazenamento
-          local e podem ser perdidos.
+          ⚠️ Aviso: Backend não conectado. Os dados do sistema estão salvos no armazenamento local
+          (localStorage) e serão perdidos em caso de limpeza de cache.
         </div>
       )}
       <header className="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-4 shadow-sm w-full">
