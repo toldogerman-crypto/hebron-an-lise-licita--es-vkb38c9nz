@@ -1,13 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TagInput } from '@/components/TagInput'
 import useConfigStore from '@/stores/config'
 import { useToast } from '@/hooks/use-toast'
 import { useBackendHealth } from '@/hooks/use-backend-health'
+import { getConfig, setConfig } from '@/services/config'
 import {
   Save,
   RotateCcw,
@@ -18,6 +20,8 @@ import {
   Ban,
   AlertTriangle,
   ShieldCheck,
+  FileText,
+  Loader2,
 } from 'lucide-react'
 
 export default function Configuracoes() {
@@ -26,8 +30,49 @@ export default function Configuracoes() {
   const [margin, setMargin] = useState(String(config.minMargin))
   const [deadline, setDeadline] = useState(String(config.minDeadlineDays))
 
+  const [perfilEmpresa, setPerfilEmpresa] = useState('')
+  const [promptCamada1, setPromptCamada1] = useState('')
+  const [isLoadingAIConfig, setIsLoadingAIConfig] = useState(true)
+  const [isSavingAIConfig, setIsSavingAIConfig] = useState(false)
+
   const { isConnected, isChecking } = useBackendHealth()
   const noBackend = !isChecking && !isConnected
+
+  useEffect(() => {
+    const loadAIConfig = async () => {
+      try {
+        const perfil = await getConfig('perfil_empresa')
+        const prompt = await getConfig('prompt_camada1')
+        setPerfilEmpresa(perfil?.valor || '')
+        setPromptCamada1(prompt?.valor || '')
+      } catch {
+        // ignore
+      } finally {
+        setIsLoadingAIConfig(false)
+      }
+    }
+    loadAIConfig()
+  }, [])
+
+  const handleSaveAIConfig = async () => {
+    setIsSavingAIConfig(true)
+    try {
+      await setConfig('perfil_empresa', perfilEmpresa)
+      await setConfig('prompt_camada1', promptCamada1)
+      toast({
+        title: 'Configurações de IA salvas!',
+        description: 'O perfil e o prompt foram atualizados.',
+      })
+    } catch {
+      toast({
+        title: 'Erro',
+        description: 'Falha ao salvar configurações.',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSavingAIConfig(false)
+    }
+  }
 
   const handleSave = () => {
     const m = Math.max(0, Number(margin) || 0)

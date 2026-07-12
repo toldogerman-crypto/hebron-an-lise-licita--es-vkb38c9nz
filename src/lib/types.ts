@@ -7,6 +7,7 @@ export type OpportunityStatus =
   | 'encerrada'
   | 'nao_entrar'
   | 'analisar_mais'
+  | 'falha_analise'
 
 export type Verdict = 'ENTRAR' | 'ANALISAR MAIS' | 'NÃO ENTRAR' | 'Pendente'
 export type UrgencyLevel = 'green' | 'yellow' | 'red'

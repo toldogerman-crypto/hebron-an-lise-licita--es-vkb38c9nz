@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Progress } from '@/components/ui/progress'
 import {
   Select,
   SelectContent,
@@ -11,11 +11,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, UploadCloud, File as FileIcon, X, Save } from 'lucide-react'
+import {
+  UploadCloud,
+  CheckCircle2,
+  AlertCircle,
+  ArrowRight,
+  Loader2,
+  RotateCcw,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/use-auth'
+import { useRealtime } from '@/hooks/use-realtime'
 import useMainStore from '@/stores/main'
-import { Opportunity, OpportunityStatus } from '@/lib/types'
+import { createOportunidade, updateOportunidade, analyzeCamada1 } from '@/services/oportunidades'
+import { createDocumento } from '@/services/documentos'
 
 const MODALITIES = [
   'Pregão Eletrônico',
@@ -29,311 +39,350 @@ const MODALITIES = [
   'Compra Direta',
 ]
 
-const STATUSES: { value: OpportunityStatus; label: string }[] = [
-  { value: 'recebida', label: 'Recebida' },
-  { value: 'em_analise', label: 'Em Análise' },
-  { value: 'aguardando_decisao', label: 'Aguardando Decisão' },
-  { value: 'em_preparacao', label: 'Em Preparação' },
-  { value: 'enviada', label: 'Enviada' },
-  { value: 'encerrada', label: 'Encerrada' },
-]
+const PROGRESS_MESSAGES = ['Lendo edital...', 'Extraindo dados...', 'Calculando score...']
 
 export default function NewOpportunity() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { addOpportunity } = useMainStore()
+  const { user } = useAuth()
+  const { refreshOpportunities } = useMainStore()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [stage, setStage] = useState<'upload' | 'processing' | 'review' | 'error'>('upload')
+  const [progressStep, setProgressStep] = useState(0)
+  const [oppId, setOppId] = useState<string | null>(null)
+  const [error, setError] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState({
-    title: '',
-    number: '',
-    organ: '',
-    cityState: '',
-    modality: '',
-    openingDate: '',
-    responsible: '',
-    status: 'recebida' as OpportunityStatus,
+    titulo: '',
+    numero_edital: '',
+    orgao: '',
+    municipio_uf: '',
+    modalidade: '',
+    data_abertura: '',
+    responsavel: user?.name || '',
     observations: '',
   })
-  const [files, setFiles] = useState<File[]>([])
-  const [isSaving, setIsSaving] = useState(false)
 
-  const handleFileSelect = (selected: FileList | null) => {
-    if (selected) {
-      const pdfFiles = Array.from(selected).filter(
-        (f) => f.type === 'application/pdf' || f.name.endsWith('.pdf'),
-      )
-      setFiles((prev) => [...prev, ...pdfFiles])
+  useRealtime<Record<string, any>>(
+    'oportunidades',
+    (e) => {
+      if (!oppId || e.record.id !== oppId) return
+      const status = e.record.status
+      if (status === 'em_analise') {
+        setProgressStep(0)
+      } else if (status === 'aguardando_decisao') {
+        const r = e.record
+        setForm({
+          titulo: r.titulo || '',
+          numero_edital: r.numero_edital || '',
+          orgao: r.orgao || '',
+          municipio_uf: r.municipio_uf || '',
+          modalidade: r.modalidade || '',
+          data_abertura: r.data_abertura ? String(r.data_abertura).split(' ')[0] : '',
+          responsavel: r.responsavel || user?.name || '',
+          observations: r.observations || '',
+        })
+        setStage('review')
+      } else if (status === 'falha_analise') {
+        setError(r.observations || 'Falha na análise do documento.')
+        setStage('error')
+      }
+    },
+    !!oppId,
+  )
+
+  useEffect(() => {
+    if (stage !== 'processing') return
+    const t1 = setTimeout(() => setProgressStep(1), 3000)
+    const t2 = setTimeout(() => setProgressStep(2), 7000)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
     }
-  }
+  }, [stage])
 
-  const removeFile = (index: number) => setFiles(files.filter((_, i) => i !== index))
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!form.title || !form.number) {
+  const handleFileSelect = async (selected: FileList | null) => {
+    if (!selected || selected.length === 0) return
+    const file = selected[0]
+    if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
       toast({
-        title: 'Campos obrigatórios',
-        description: 'Preencha título e número do edital.',
+        title: 'Formato inválido',
+        description: 'Apenas arquivos PDF são aceitos.',
         variant: 'destructive',
       })
       return
     }
-    setIsSaving(true)
-    const [city, state] = form.cityState.split('/').map((s) => s.trim())
-    const opp: Opportunity = {
-      id: `opp-${Date.now()}`,
-      title: form.title,
-      number: form.number,
-      organ: form.organ,
-      modality: form.modality || 'Não informada',
-      status: form.status,
-      verdict: 'Pendente',
-      score: 0,
-      dateAdded: new Date().toISOString(),
-      dueDate: form.openingDate || '',
-      openingDate: form.openingDate || '',
-      state: state || '',
-      city: city || '',
-      portal: '',
-      responsible: form.responsible,
-      observations: form.observations,
-      radarSynced: false,
-      files: files.map((f) => f.name),
-      checklist: [
-        { id: '1', task: 'Analisar restrições do edital (Jurídico)', completed: false },
-        { id: '2', task: 'Reunir atestados de capacidade técnica', completed: false },
-        { id: '3', task: 'Pesquisa de preço de mercado', completed: false },
-        { id: '4', task: 'Validar margem e viabilidade financeira', completed: false },
-        { id: '5', task: 'Cadastro da proposta no portal', completed: false },
-      ],
-    }
+    setIsUploading(true)
     try {
-      await addOpportunity(opp, files)
-      toast({
-        title: 'Oportunidade criada!',
-        description: 'O processo foi registrado com sucesso.',
+      const opp = await createOportunidade({
+        titulo: 'Aguardando análise...',
+        numero_edital: 'TEMP-' + Date.now(),
+        status: 'recebida',
+        responsavel: form.responsavel || user?.name || '',
+        responsavel_id: user?.id || '',
+        observations: '',
       })
-      navigate('/radar')
+      setOppId(opp.id)
+      const formData = new FormData()
+      formData.append('oportunidade_id', opp.id)
+      formData.append('nome_arquivo', file.name)
+      formData.append('tipo', 'edital')
+      formData.append('arquivo', file)
+      await createDocumento(formData)
+      setStage('processing')
+      setProgressStep(0)
+      analyzeCamada1(opp.id).catch(() => {})
     } catch (err: unknown) {
       toast({
         title: 'Erro',
-        description: err instanceof Error ? err.message : 'Falha ao salvar.',
+        description: err instanceof Error ? err.message : 'Falha ao criar oportunidade.',
         variant: 'destructive',
       })
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleViewResult = async () => {
+    if (!oppId) return
+    setIsSaving(true)
+    try {
+      await updateOportunidade(oppId, {
+        titulo: form.titulo,
+        numero_edital: form.numero_edital,
+        orgao: form.orgao,
+        municipio_uf: form.municipio_uf,
+        modalidade: form.modalidade,
+        data_abertura: form.data_abertura,
+        responsavel: form.responsavel,
+        observations: form.observations,
+      })
+      await refreshOpportunities()
+      navigate(`/oportunidade/${oppId}`)
+    } catch {
+      toast({ title: 'Erro', description: 'Falha ao salvar alterações.', variant: 'destructive' })
     } finally {
       setIsSaving(false)
     }
   }
 
-  return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-20">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate(-1)}
-        className="-ml-2 text-slate-500"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
-      </Button>
-      <div>
-        <h1 className="text-2xl font-bold font-display text-slate-900">Nova Oportunidade</h1>
-        <p className="text-slate-500">Cadastre uma nova oportunidade de licitação.</p>
-      </div>
+  const handleRetry = () => {
+    setStage('upload')
+    setOppId(null)
+    setError('')
+    setProgressStep(0)
+    setForm({
+      titulo: '',
+      numero_edital: '',
+      orgao: '',
+      municipio_uf: '',
+      modalidade: '',
+      data_abertura: '',
+      responsavel: user?.name || '',
+      observations: '',
+    })
+  }
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Informações do Edital</CardTitle>
-            <CardDescription>Preencha os dados principais do processo licitatório.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Título *</Label>
-              <Input
-                id="title"
-                placeholder="Ex: Serviços de Consultoria em TI"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                required
-              />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="number">Nº do Edital *</Label>
-                <Input
-                  id="number"
-                  placeholder="Ex: PE 045/2026"
-                  value={form.number}
-                  onChange={(e) => setForm({ ...form, number: e.target.value })}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="organ">Órgão / Entidade</Label>
-                <Input
-                  id="organ"
-                  placeholder="Ex: Ministério do Meio Ambiente"
-                  value={form.organ}
-                  onChange={(e) => setForm({ ...form, organ: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="cityState">Município/UF</Label>
-                <Input
-                  id="cityState"
-                  placeholder="Ex: Lages/SC"
-                  value={form.cityState}
-                  onChange={(e) => setForm({ ...form, cityState: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="modality">Modalidade</Label>
-                <Select
-                  value={form.modality}
-                  onValueChange={(v) => setForm({ ...form, modality: v })}
-                >
-                  <SelectTrigger id="modality">
-                    <SelectValue placeholder="Selecione..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MODALITIES.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="openingDate">Data de Abertura</Label>
-                <Input
-                  id="openingDate"
-                  type="date"
-                  value={form.openingDate}
-                  onChange={(e) => setForm({ ...form, openingDate: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="responsible">Responsável</Label>
-                <Input
-                  id="responsible"
-                  placeholder="Ex: Carlos Eduardo"
-                  value={form.responsible}
-                  onChange={(e) => setForm({ ...form, responsible: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={form.status}
-                onValueChange={(v) => setForm({ ...form, status: v as OpportunityStatus })}
-              >
-                <SelectTrigger id="status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {STATUSES.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="observations">Observações</Label>
-              <Textarea
-                id="observations"
-                rows={3}
-                placeholder="Anotações iniciais sobre o edital..."
-                value={form.observations}
-                onChange={(e) => setForm({ ...form, observations: e.target.value })}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-base">Documentos (PDF)</CardTitle>
-            <CardDescription>Anexe editais, anexos e documentos relacionados.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer hover:border-slate-400 transition-colors"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                e.preventDefault()
-                handleFileSelect(e.dataTransfer.files)
-              }}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <UploadCloud className="mx-auto h-10 w-10 text-slate-400 mb-3" />
-              <p className="text-sm text-slate-600 font-medium">
-                Arraste PDFs aqui ou clique para selecionar
-              </p>
-              <p className="text-xs text-slate-400 mt-1">Apenas arquivos PDF</p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept=".pdf,application/pdf"
-                className="hidden"
-                onChange={(e) => handleFileSelect(e.target.files)}
-              />
-            </div>
-            {files.length > 0 && (
-              <div className="mt-4 space-y-2">
-                {files.map((file, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-lg"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <FileIcon className="h-5 w-5 text-rose-500 shrink-0" />
-                      <span className="text-sm font-medium text-slate-700 truncate">
-                        {file.name}
-                      </span>
-                      <span className="text-xs text-slate-400 shrink-0">
-                        ({(file.size / 1024).toFixed(0)} KB)
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      onClick={() => removeFile(i)}
-                    >
-                      <X className="h-4 w-4 text-slate-400" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <div className="flex gap-3">
-          <Button type="button" variant="outline" className="flex-1" onClick={() => navigate(-1)}>
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            className="flex-1 bg-[#2563EB] hover:bg-blue-700"
-            disabled={isSaving}
+  if (stage === 'upload') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6 pb-20">
+        <div>
+          <h1 className="text-2xl font-bold font-display text-slate-900">Nova Oportunidade</h1>
+          <p className="text-slate-500">Faça upload do edital e a IA fará o resto.</p>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="responsavel">Responsável</Label>
+            <Input
+              id="responsavel"
+              value={form.responsavel}
+              onChange={(e) => setForm({ ...form, responsavel: e.target.value })}
+              placeholder="Nome do responsável"
+            />
+          </div>
+          <div
+            className="border-2 border-dashed border-slate-300 rounded-xl p-12 text-center cursor-pointer hover:border-[#2563EB] hover:bg-blue-50/50 transition-all"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              e.preventDefault()
+              handleFileSelect(e.dataTransfer.files)
+            }}
+            onClick={() => fileInputRef.current?.click()}
           >
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Salvando...' : 'Salvar Oportunidade'}
+            {isUploading ? (
+              <Loader2 className="mx-auto h-12 w-12 text-[#2563EB] animate-spin mb-4" />
+            ) : (
+              <UploadCloud className="mx-auto h-12 w-12 text-slate-400 mb-4" />
+            )}
+            <p className="text-lg font-semibold text-slate-700">
+              {isUploading ? 'Enviando...' : 'Arraste o edital aqui ou clique para selecionar'}
+            </p>
+            <p className="text-sm text-slate-400 mt-2">Apenas arquivos PDF</p>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              className="hidden"
+              onChange={(e) => handleFileSelect(e.target.files)}
+            />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (stage === 'processing') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-8 pb-20 pt-12">
+        <div className="text-center">
+          <Loader2 className="mx-auto h-12 w-12 text-[#2563EB] animate-spin mb-4" />
+          <h2 className="text-xl font-bold font-display text-slate-900 mb-2">
+            {PROGRESS_MESSAGES[progressStep]}
+          </h2>
+          <p className="text-sm text-slate-500">A IA está processando o edital. Aguarde...</p>
+        </div>
+        <div className="space-y-2">
+          <Progress value={((progressStep + 1) / 3) * 100} className="h-2" />
+          <div className="flex justify-between text-xs text-slate-400">
+            {PROGRESS_MESSAGES.map((msg, i) => (
+              <span key={i} className={i <= progressStep ? 'text-[#2563EB] font-medium' : ''}>
+                {msg}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (stage === 'error') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6 pb-20 pt-12">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-rose-500 mb-4" />
+          <h2 className="text-xl font-bold font-display text-slate-900 mb-2">Falha na Análise</h2>
+          <p className="text-sm text-slate-500">{error}</p>
+        </div>
+        <div className="flex justify-center">
+          <Button onClick={handleRetry} variant="outline" className="gap-2">
+            <RotateCcw className="h-4 w-4" /> Tentar Novamente
           </Button>
         </div>
-      </form>
+      </div>
+    )
+  }
+
+  return (
+    <div className="max-w-2xl mx-auto space-y-6 pb-20">
+      <div className="flex items-center gap-3">
+        <CheckCircle2 className="h-6 w-6 text-[#0D6E3F]" />
+        <div>
+          <h1 className="text-2xl font-bold font-display text-slate-900">Análise Concluída!</h1>
+          <p className="text-slate-500">
+            Revise os dados extraídos e confirme para ver o parecer completo.
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="titulo">Título</Label>
+          <Input
+            id="titulo"
+            value={form.titulo}
+            onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+          />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="numero_edital">Nº do Edital</Label>
+            <Input
+              id="numero_edital"
+              value={form.numero_edital}
+              onChange={(e) => setForm({ ...form, numero_edital: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="orgao">Órgão</Label>
+            <Input
+              id="orgao"
+              value={form.orgao}
+              onChange={(e) => setForm({ ...form, orgao: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="municipio_uf">Município/UF</Label>
+            <Input
+              id="municipio_uf"
+              value={form.municipio_uf}
+              onChange={(e) => setForm({ ...form, municipio_uf: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="modalidade">Modalidade</Label>
+            <Select
+              value={form.modalidade}
+              onValueChange={(v) => setForm({ ...form, modalidade: v })}
+            >
+              <SelectTrigger id="modalidade">
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                {MODALITIES.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="data_abertura">Data de Abertura</Label>
+            <Input
+              id="data_abertura"
+              type="date"
+              value={form.data_abertura}
+              onChange={(e) => setForm({ ...form, data_abertura: e.target.value })}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="responsavel">Responsável</Label>
+            <Input
+              id="responsavel"
+              value={form.responsavel}
+              onChange={(e) => setForm({ ...form, responsavel: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="observations">Observações</Label>
+          <Textarea
+            id="observations"
+            rows={3}
+            value={form.observations}
+            onChange={(e) => setForm({ ...form, observations: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <Button
+        onClick={handleViewResult}
+        disabled={isSaving}
+        className="w-full bg-[#2563EB] hover:bg-blue-700 gap-2"
+      >
+        {isSaving ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <ArrowRight className="h-4 w-4" />
+        )}
+        Ver Resultado da Análise
+      </Button>
     </div>
   )
 }
