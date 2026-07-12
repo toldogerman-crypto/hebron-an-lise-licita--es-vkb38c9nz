@@ -20,9 +20,18 @@ function InfoRow({ label, value, source }: { label: string; value?: string; sour
 }
 
 export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
+  const vp = analysis?.valores_prazos ?? {}
+  const compat = analysis?.compatibilidade
+  const fit = analysis?.fit_estrategico
+  const benef = analysis?.beneficio_epp
+  const exig = analysis?.exigencias as
+    | Record<string, { valor: string; fonte: string } | undefined>
+    | undefined
+  const local = analysis?.local_entrega
+
   return (
     <div className="space-y-6">
-      {analysis.trava && (
+      {analysis?.trava && (
         <div className="bg-[#FEF2F2] border border-[#FECACA] p-4 rounded-xl flex gap-3">
           <AlertTriangle className="text-[#B91C1C] shrink-0" />
           <div>
@@ -34,7 +43,7 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
 
       <Card className="shadow-sm border-slate-200">
         <CardContent className="p-6 text-slate-700 text-sm leading-relaxed">
-          {analysis.resumo_simples}
+          {analysis?.resumo_simples ?? 'Análise não disponível.'}
         </CardContent>
       </Card>
 
@@ -48,28 +57,28 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
           <CardContent className="p-4 px-6">
             <InfoRow
               label="Valor Estimado"
-              value={analysis.valores_prazos.valor_estimado?.valor}
-              source={analysis.valores_prazos.valor_estimado?.fonte}
+              value={vp.valor_estimado?.valor}
+              source={vp.valor_estimado?.fonte}
             />
             <InfoRow
               label="Abertura das Propostas"
-              value={analysis.valores_prazos.data_abertura_propostas?.valor}
-              source={analysis.valores_prazos.data_abertura_propostas?.fonte}
+              value={vp.data_abertura_propostas?.valor}
+              source={vp.data_abertura_propostas?.fonte}
             />
             <InfoRow
               label="Prazo de Execução"
-              value={analysis.valores_prazos.prazo_entrega_execucao?.valor}
-              source={analysis.valores_prazos.prazo_entrega_execucao?.fonte}
+              value={vp.prazo_entrega_execucao?.valor}
+              source={vp.prazo_entrega_execucao?.fonte}
             />
             <InfoRow
               label="Prazo de Pagamento"
-              value={analysis.valores_prazos.prazo_pagamento?.valor}
-              source={analysis.valores_prazos.prazo_pagamento?.fonte}
+              value={vp.prazo_pagamento?.valor}
+              source={vp.prazo_pagamento?.fonte}
             />
             <InfoRow
               label="Vigência Contratual"
-              value={analysis.valores_prazos.vigencia_contrato?.valor}
-              source={analysis.valores_prazos.vigencia_contrato?.fonte}
+              value={vp.vigencia_contrato?.valor}
+              source={vp.vigencia_contrato?.fonte}
             />
           </CardContent>
         </Card>
@@ -81,23 +90,19 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4 px-6">
-            <div className="py-3 border-b border-slate-100">
-              <span
-                className={`text-sm font-bold ${analysis.compatibilidade.cnae_compativel ? 'text-emerald-600' : 'text-rose-600'}`}
-              >
-                {analysis.compatibilidade.cnae_compativel
-                  ? '✓ CNAE Compatível'
-                  : '✗ CNAE Incompatível'}
-              </span>
-              <p className="text-xs text-slate-500 mt-1">{analysis.compatibilidade.cnae_match}</p>
-            </div>
-            <InfoRow label="Segmento" value={analysis.fit_estrategico.segmento} />
-            <InfoRow label="Requer Estoque" value={analysis.fit_estrategico.opera_sem_estoque} />
-            <InfoRow
-              label="Benefício ME/EPP"
-              value={analysis.beneficio_epp.valor}
-              source={analysis.beneficio_epp.fonte}
-            />
+            {compat && (
+              <div className="py-3 border-b border-slate-100">
+                <span
+                  className={`text-sm font-bold ${compat.cnae_compativel ? 'text-emerald-600' : 'text-rose-600'}`}
+                >
+                  {compat.cnae_compativel ? '✓ CNAE Compatível' : '✗ CNAE Incompatível'}
+                </span>
+                <p className="text-xs text-slate-500 mt-1">{compat.cnae_match}</p>
+              </div>
+            )}
+            <InfoRow label="Segmento" value={fit?.segmento} />
+            <InfoRow label="Requer Estoque" value={fit?.opera_sem_estoque} />
+            <InfoRow label="Benefício ME/EPP" value={benef?.valor} source={benef?.fonte} />
           </CardContent>
         </Card>
 
@@ -110,29 +115,25 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
           <CardContent className="p-4 px-6 grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-0">
             <InfoRow
               label="Atestado Técnico"
-              value={analysis.exigencias.atestado_tecnico?.valor}
-              source={analysis.exigencias.atestado_tecnico?.fonte}
+              value={exig?.atestado_tecnico?.valor}
+              source={exig?.atestado_tecnico?.fonte}
             />
             <InfoRow
               label="Garantia"
-              value={analysis.exigencias.garantia?.valor}
-              source={analysis.exigencias.garantia?.fonte}
+              value={exig?.garantia?.valor}
+              source={exig?.garantia?.fonte}
             />
-            <InfoRow
-              label="Local de Entrega"
-              value={analysis.local_entrega.valor}
-              source={analysis.local_entrega.fonte}
-            />
+            <InfoRow label="Local de Entrega" value={local?.valor} source={local?.fonte} />
             <InfoRow
               label="Vistoria"
-              value={analysis.exigencias.vistoria?.valor}
-              source={analysis.exigencias.vistoria?.fonte}
+              value={exig?.vistoria?.valor}
+              source={exig?.vistoria?.fonte}
             />
           </CardContent>
         </Card>
       </div>
 
-      {analysis.recomendacao && (
+      {analysis?.recomendacao && (
         <div className="bg-[#1F2937] text-white p-6 rounded-xl shadow-sm">
           <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
             Recomendação do Analista (Camada 1)
