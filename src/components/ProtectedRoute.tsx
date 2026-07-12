@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
 
 export function ProtectedRoute() {
-  const { user, isLoading } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
 
   if (isLoading) {
     return (
@@ -13,7 +13,7 @@ export function ProtectedRoute() {
     )
   }
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 

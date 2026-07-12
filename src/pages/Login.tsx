@@ -10,13 +10,13 @@ import { SKIP_CLOUD_ENABLED } from '@/lib/skip-cloud'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { login, user } = useAuthStore()
+  const { login, isAuthenticated } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  if (user) {
+  if (isAuthenticated) {
     return <Navigate to="/" replace />
   }
 
