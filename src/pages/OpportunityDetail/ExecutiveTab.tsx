@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { AlertTriangle, Info, MapPin, Zap } from 'lucide-react'
-import { AnalysisResult } from '@/lib/types'
+import type { AnalysisResult } from '@/lib/types'
 
 function InfoRow({ label, value, source }: { label: string; value?: string; source?: string }) {
   if (!value || value === 'NÃO LOCALIZADO NO EDITAL') return null
@@ -28,6 +28,8 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
     | Record<string, { valor: string; fonte: string } | undefined>
     | undefined
   const local = analysis?.local_entrega
+  const pontosPositivos = analysis?.pontos_positivos ?? []
+  const riscos = analysis?.riscos ?? []
 
   return (
     <div className="space-y-6">
@@ -57,28 +59,28 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
           <CardContent className="p-4 px-6">
             <InfoRow
               label="Valor Estimado"
-              value={vp.valor_estimado?.valor}
-              source={vp.valor_estimado?.fonte}
+              value={vp?.valor_estimado?.valor}
+              source={vp?.valor_estimado?.fonte}
             />
             <InfoRow
               label="Abertura das Propostas"
-              value={vp.data_abertura_propostas?.valor}
-              source={vp.data_abertura_propostas?.fonte}
+              value={vp?.data_abertura_propostas?.valor}
+              source={vp?.data_abertura_propostas?.fonte}
             />
             <InfoRow
               label="Prazo de Execução"
-              value={vp.prazo_entrega_execucao?.valor}
-              source={vp.prazo_entrega_execucao?.fonte}
+              value={vp?.prazo_entrega_execucao?.valor}
+              source={vp?.prazo_entrega_execucao?.fonte}
             />
             <InfoRow
               label="Prazo de Pagamento"
-              value={vp.prazo_pagamento?.valor}
-              source={vp.prazo_pagamento?.fonte}
+              value={vp?.prazo_pagamento?.valor}
+              source={vp?.prazo_pagamento?.fonte}
             />
             <InfoRow
               label="Vigência Contratual"
-              value={vp.vigencia_contrato?.valor}
-              source={vp.vigencia_contrato?.fonte}
+              value={vp?.vigencia_contrato?.valor}
+              source={vp?.vigencia_contrato?.fonte}
             />
           </CardContent>
         </Card>
@@ -97,7 +99,7 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
                 >
                   {compat.cnae_compativel ? '✓ CNAE Compatível' : '✗ CNAE Incompatível'}
                 </span>
-                <p className="text-xs text-slate-500 mt-1">{compat.cnae_match}</p>
+                <p className="text-xs text-slate-500 mt-1">{compat.cnae_match ?? ''}</p>
               </div>
             )}
             <InfoRow label="Segmento" value={fit?.segmento} />
@@ -132,6 +134,49 @@ export function ExecutiveTab({ analysis }: { analysis: AnalysisResult }) {
           </CardContent>
         </Card>
       </div>
+
+      {(pontosPositivos.length > 0 || riscos.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {pontosPositivos.length > 0 && (
+            <Card className="shadow-sm border-slate-200">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-3">
+                <CardTitle className="text-sm font-display text-slate-800 uppercase tracking-wide">
+                  Pontos Positivos
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 px-6">
+                <ul className="space-y-2">
+                  {pontosPositivos.map((p, i) => (
+                    <li key={i} className="text-sm text-slate-600 flex gap-2">
+                      <span className="text-emerald-500 shrink-0">✓</span>
+                      <span>{p}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+          {riscos.length > 0 && (
+            <Card className="shadow-sm border-slate-200">
+              <CardHeader className="bg-slate-50/50 border-b border-slate-100 pb-3">
+                <CardTitle className="text-sm font-display text-slate-800 uppercase tracking-wide">
+                  Riscos Identificados
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 px-6">
+                <ul className="space-y-2">
+                  {riscos.map((r, i) => (
+                    <li key={i} className="text-sm text-slate-600 flex gap-2">
+                      <span className="text-rose-500 shrink-0">⚠</span>
+                      <span>{r}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {analysis?.recomendacao && (
         <div className="bg-[#1F2937] text-white p-6 rounded-xl shadow-sm">

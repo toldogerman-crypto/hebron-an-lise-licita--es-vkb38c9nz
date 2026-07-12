@@ -1,31 +1,27 @@
 migrate(
   (app) => {
     var col = app.findCollectionByNameOrId('oportunidades')
-    var newFields = []
-    for (var i = 0; i < col.fields.length; i++) {
-      var f = col.fields[i]
-      if (f.name === 'status') {
-        newFields.push({
-          name: 'status',
-          type: 'select',
-          values: [
-            'recebida',
-            'em_analise',
-            'aguardando_decisao',
-            'em_preparacao',
-            'enviada',
-            'encerrada',
-            'nao_entrar',
-            'analisar_mais',
-            'falha_analise',
-          ],
-          maxSelect: 1,
-        })
-      } else {
-        newFields.push(f)
-      }
+    var existingStatus = col.fields.getByName('status')
+    if (existingStatus) {
+      col.fields.remove(existingStatus)
     }
-    col.fields = newFields
+    col.fields.add(
+      new SelectField({
+        name: 'status',
+        values: [
+          'recebida',
+          'em_analise',
+          'aguardando_decisao',
+          'em_preparacao',
+          'enviada',
+          'encerrada',
+          'nao_entrar',
+          'analisar_mais',
+          'falha_analise',
+        ],
+        maxSelect: 1,
+      }),
+    )
     app.save(col)
 
     var configCol = app.findCollectionByNameOrId('config')
@@ -113,30 +109,26 @@ migrate(
   },
   (app) => {
     var col = app.findCollectionByNameOrId('oportunidades')
-    var newFields = []
-    for (var i = 0; i < col.fields.length; i++) {
-      var f = col.fields[i]
-      if (f.name === 'status') {
-        newFields.push({
-          name: 'status',
-          type: 'select',
-          values: [
-            'recebida',
-            'em_analise',
-            'aguardando_decisao',
-            'em_preparacao',
-            'enviada',
-            'encerrada',
-            'nao_entrar',
-            'analisar_mais',
-          ],
-          maxSelect: 1,
-        })
-      } else {
-        newFields.push(f)
-      }
+    var existingStatus = col.fields.getByName('status')
+    if (existingStatus) {
+      col.fields.remove(existingStatus)
     }
-    col.fields = newFields
+    col.fields.add(
+      new SelectField({
+        name: 'status',
+        values: [
+          'recebida',
+          'em_analise',
+          'aguardando_decisao',
+          'em_preparacao',
+          'enviada',
+          'encerrada',
+          'nao_entrar',
+          'analisar_mais',
+        ],
+        maxSelect: 1,
+      }),
+    )
     app.save(col)
   },
 )
