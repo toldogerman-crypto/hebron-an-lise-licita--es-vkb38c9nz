@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-12T20:25:01.538Z",
+  "generatedAt": "2026-07-12T20:27:42.840Z",
   "collections": [
     {
       "name": "users",
@@ -29,14 +29,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -138,7 +143,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["ganhou", "perdeu", "nao_participou"]
+          "selectValues": [
+            "ganhou",
+            "perdeu",
+            "nao_participou"
+          ]
         },
         {
           "name": "valor_homologado",
@@ -247,14 +256,19 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
       "indexes": [
@@ -292,7 +306,12 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["edital", "tr", "etp", "outro"]
+          "selectValues": [
+            "edital",
+            "tr",
+            "etp",
+            "outro"
+          ]
         },
         {
           "name": "arquivo",
@@ -305,17 +324,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_documentos_opp ON documentos (oportunidade_id)"]
+      "indexes": [
+        "CREATE INDEX idx_documentos_opp ON documentos (oportunidade_id)"
+      ]
     },
     {
       "name": "analises",
@@ -340,7 +366,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["camada1", "camada23", "camada45"]
+          "selectValues": [
+            "camada1",
+            "camada23",
+            "camada45"
+          ]
         },
         {
           "name": "json_resultado",
@@ -353,17 +383,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_analises_opp ON analises (oportunidade_id)"]
+      "indexes": [
+        "CREATE INDEX idx_analises_opp ON analises (oportunidade_id)"
+      ]
     },
     {
       "name": "motor_avaliacoes",
@@ -412,7 +449,11 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["GO", "GO_CONDICIONAL", "NO_GO"]
+          "selectValues": [
+            "GO",
+            "GO_CONDICIONAL",
+            "NO_GO"
+          ]
         },
         {
           "name": "memo_executivo",
@@ -425,17 +466,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_motor_opp ON motor_avaliacoes (oportunidade_id)"]
+      "indexes": [
+        "CREATE INDEX idx_motor_opp ON motor_avaliacoes (oportunidade_id)"
+      ]
     },
     {
       "name": "checklist_itens",
@@ -484,24 +532,36 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["pendente", "em_preparacao", "pronto", "nao_aplicavel"]
+          "selectValues": [
+            "pendente",
+            "em_preparacao",
+            "pronto",
+            "nao_aplicavel"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_checklist_opp ON checklist_itens (oportunidade_id)"]
+      "indexes": [
+        "CREATE INDEX idx_checklist_opp ON checklist_itens (oportunidade_id)"
+      ]
     },
     {
       "name": "gate_decisoes",
@@ -556,24 +616,35 @@
           "type": "select",
           "required": false,
           "system": false,
-          "selectValues": ["ENTRAR", "ANALISAR_MAIS", "NAO_ENTRAR"]
+          "selectValues": [
+            "ENTRAR",
+            "ANALISAR_MAIS",
+            "NAO_ENTRAR"
+          ]
         },
         {
           "name": "created",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE INDEX idx_gate_opp ON gate_decisoes (oportunidade_id)"]
+      "indexes": [
+        "CREATE INDEX idx_gate_opp ON gate_decisoes (oportunidade_id)"
+      ]
     },
     {
       "name": "config",
@@ -603,17 +674,24 @@
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate"]
+          "autodateTriggers": [
+            "onCreate"
+          ]
         },
         {
           "name": "updated",
           "type": "autodate",
           "required": false,
           "system": false,
-          "autodateTriggers": ["onCreate", "onUpdate"]
+          "autodateTriggers": [
+            "onCreate",
+            "onUpdate"
+          ]
         }
       ],
-      "indexes": ["CREATE UNIQUE INDEX idx_config_chave ON config (chave)"]
+      "indexes": [
+        "CREATE UNIQUE INDEX idx_config_chave ON config (chave)"
+      ]
     }
   ]
 }
