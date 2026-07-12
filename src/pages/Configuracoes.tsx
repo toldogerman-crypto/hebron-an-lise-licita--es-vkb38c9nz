@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { TagInput } from '@/components/TagInput'
 import useConfigStore from '@/stores/config'
 import { useToast } from '@/hooks/use-toast'
+import { useBackendHealth } from '@/hooks/use-backend-health'
 import {
   Save,
   RotateCcw,
@@ -25,7 +26,8 @@ export default function Configuracoes() {
   const [margin, setMargin] = useState(String(config.minMargin))
   const [deadline, setDeadline] = useState(String(config.minDeadlineDays))
 
-  const noBackend = !import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SKIP_CLOUD
+  const { isConnected, isChecking } = useBackendHealth()
+  const noBackend = !isChecking && !isConnected
 
   const handleSave = () => {
     const m = Math.max(0, Number(margin) || 0)

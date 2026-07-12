@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react'
 import { useAuthStore } from '@/stores/auth'
-import { SKIP_CLOUD_ENABLED } from '@/lib/skip-cloud'
+import { useBackendHealth } from '@/hooks/use-backend-health'
 
 export default function Login() {
   const navigate = useNavigate()
   const { login, isAuthenticated } = useAuthStore()
+  const { isConnected } = useBackendHealth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -88,7 +89,7 @@ export default function Login() {
               {isLoading ? 'Entrando...' : 'Entrar'}
             </Button>
           </form>
-          {!SKIP_CLOUD_ENABLED && (
+          {!isConnected && (
             <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg p-3 mt-4 text-center">
               ⚠️ Modo Demo: Backend não conectado. Use qualquer e-mail e senha para entrar.
             </p>

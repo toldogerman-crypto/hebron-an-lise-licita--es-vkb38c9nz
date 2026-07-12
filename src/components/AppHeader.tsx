@@ -3,10 +3,13 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useSidebar } from '@/components/ui/sidebar'
 import { useLocation } from 'react-router-dom'
+import { useBackendHealth } from '@/hooks/use-backend-health'
 
 export function AppHeader() {
   const { toggleSidebar } = useSidebar()
   const location = useLocation()
+  const { isConnected, isChecking } = useBackendHealth()
+  const showWarning = !isChecking && !isConnected
 
   const getPageTitle = () => {
     switch (location.pathname) {
@@ -28,7 +31,7 @@ export function AppHeader() {
 
   return (
     <div className="sticky top-0 z-20 w-full flex flex-col">
-      {!import.meta.env.VITE_SUPABASE_URL && !import.meta.env.VITE_SKIP_CLOUD && (
+      {showWarning && (
         <div className="bg-amber-100 text-amber-800 text-xs px-4 py-1.5 text-center font-medium border-b border-amber-200 shadow-sm">
           ⚠️ Aviso: Backend não conectado. Os dados do sistema estão salvos no armazenamento local
           (localStorage) e serão perdidos em caso de limpeza de cache.
