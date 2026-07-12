@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { listOportunidades } from '@/services/oportunidades'
+import { listOportunidades, deleteOportunidade } from '@/services/oportunidades'
 import type { Opportunity, UserRole } from '@/lib/types'
 
 interface MainStoreContextType {
@@ -8,6 +8,7 @@ interface MainStoreContextType {
   setRole: (role: UserRole) => void
   refreshOpportunities: () => Promise<void>
   updateOpportunity: (id: string, data: Partial<Opportunity>) => void
+  deleteOpportunity: (id: string) => Promise<void>
 }
 
 const MainStoreContext = createContext<MainStoreContextType | undefined>(undefined)
