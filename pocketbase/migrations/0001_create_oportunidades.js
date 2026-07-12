@@ -1,0 +1,88 @@
+migrate(
+  (app) => {
+    const collection = new Collection({
+      name: 'oportunidades',
+      type: 'base',
+      listRule: "@request.auth.id != ''",
+      viewRule: "@request.auth.id != ''",
+      createRule: "@request.auth.id != ''",
+      updateRule: "@request.auth.id != ''",
+      deleteRule: "@request.auth.id != ''",
+      fields: [
+        { name: 'titulo', type: 'text', required: true },
+        { name: 'numero_edital', type: 'text', required: true },
+        { name: 'orgao', type: 'text' },
+        { name: 'municipio_uf', type: 'text' },
+        { name: 'modalidade', type: 'text' },
+        { name: 'portal', type: 'text' },
+        { name: 'data_abertura', type: 'date' },
+        { name: 'responsavel', type: 'text' },
+        { name: 'responsavel_id', type: 'relation', collectionId: '_pb_users_auth_', maxSelect: 1 },
+        { name: 'created_by', type: 'relation', collectionId: '_pb_users_auth_', maxSelect: 1 },
+        {
+          name: 'status',
+          type: 'select',
+          values: [
+            'recebida',
+            'em_analise',
+            'aguardando_decisao',
+            'em_preparacao',
+            'enviada',
+            'encerrada',
+            'nao_entrar',
+            'analisar_mais',
+          ],
+          maxSelect: 1,
+        },
+        {
+          name: 'resultado',
+          type: 'select',
+          values: ['ganhou', 'perdeu', 'nao_participou'],
+          maxSelect: 1,
+        },
+        { name: 'valor_homologado', type: 'text' },
+        { name: 'aprendizado', type: 'text' },
+        { name: 'finalizado_em', type: 'date' },
+        { name: 'score', type: 'number', onlyInt: true },
+        { name: 'verdict', type: 'text' },
+        { name: 'radar_synced', type: 'bool' },
+        { name: 'observations', type: 'text' },
+        { name: 'analysis', type: 'json' },
+        { name: 'deep_risco', type: 'json' },
+        { name: 'deep_margem', type: 'json' },
+        { name: 'decision_gate', type: 'json' },
+        { name: 'checklist', type: 'json' },
+        { name: 'estimated_margin', type: 'number', onlyInt: true },
+        { name: 'motor_score', type: 'json' },
+        { name: 'motor_decision', type: 'text' },
+        { name: 'motor_memo', type: 'text' },
+        {
+          name: 'files',
+          type: 'file',
+          maxSelect: 20,
+          maxSize: 52428800,
+          mimeTypes: [
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'text/markdown',
+            'image/png',
+            'image/jpeg',
+          ],
+        },
+        { name: 'created', type: 'autodate', onCreate: true, onUpdate: false },
+        { name: 'updated', type: 'autodate', onCreate: true, onUpdate: true },
+      ],
+      indexes: [
+        'CREATE INDEX idx_oportunidades_status ON oportunidades (status)',
+        'CREATE INDEX idx_oportunidades_created ON oportunidades (created DESC)',
+        'CREATE INDEX idx_oportunidades_numero ON oportunidades (numero_edital)',
+      ],
+    })
+    app.save(collection)
+  },
+  (app) => {
+    const collection = app.findCollectionByNameOrId('oportunidades')
+    app.delete(collection)
+  },
+)

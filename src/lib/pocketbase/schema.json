@@ -1,0 +1,619 @@
+{
+  "generatedAt": "2026-07-12T19:03:08.739Z",
+  "collections": [
+    {
+      "name": "users",
+      "type": "auth",
+      "apiRules": {
+        "list": "id = @request.auth.id",
+        "view": "id = @request.auth.id",
+        "create": "",
+        "update": "id = @request.auth.id",
+        "delete": "id = @request.auth.id"
+      },
+      "fields": [
+        {
+          "name": "name",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "avatar",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE UNIQUE INDEX `idx_tokenKey__pb_users_auth_` ON `users` (`tokenKey`)",
+        "CREATE UNIQUE INDEX `idx_email__pb_users_auth_` ON `users` (`email`) WHERE `email` != ''"
+      ]
+    },
+    {
+      "name": "oportunidades",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "titulo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "numero_edital",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "orgao",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "municipio_uf",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "modalidade",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "portal",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "data_abertura",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsavel",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "responsavel_id",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "created_by",
+          "type": "relation",
+          "required": false,
+          "system": false,
+          "collectionRef": "users"
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "recebida",
+            "em_analise",
+            "aguardando_decisao",
+            "em_preparacao",
+            "enviada",
+            "encerrada",
+            "nao_entrar",
+            "analisar_mais"
+          ]
+        },
+        {
+          "name": "resultado",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["ganhou", "perdeu", "nao_participou"]
+        },
+        {
+          "name": "valor_homologado",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "aprendizado",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "finalizado_em",
+          "type": "date",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "score",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "verdict",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "radar_synced",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "observations",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "analysis",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deep_risco",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "deep_margem",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "decision_gate",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "checklist",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "estimated_margin",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motor_score",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motor_decision",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "motor_memo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "files",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": [
+        "CREATE INDEX idx_oportunidades_status ON oportunidades (status)",
+        "CREATE INDEX idx_oportunidades_created ON oportunidades (created DESC)",
+        "CREATE INDEX idx_oportunidades_numero ON oportunidades (numero_edital)"
+      ]
+    },
+    {
+      "name": "documentos",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "oportunidade_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "oportunidades"
+        },
+        {
+          "name": "nome_arquivo",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["edital", "tr", "etp", "outro"]
+        },
+        {
+          "name": "arquivo",
+          "type": "file",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_documentos_opp ON documentos (oportunidade_id)"]
+    },
+    {
+      "name": "analises",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "oportunidade_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "oportunidades"
+        },
+        {
+          "name": "tipo",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["camada1", "camada23", "camada45"]
+        },
+        {
+          "name": "json_resultado",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_analises_opp ON analises (oportunidade_id)"]
+    },
+    {
+      "name": "motor_avaliacoes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "oportunidade_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "oportunidades"
+        },
+        {
+          "name": "inputs",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "pesos",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "knockouts",
+          "type": "json",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "score_final",
+          "type": "number",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "decisao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["GO", "GO_CONDICIONAL", "NO_GO"]
+        },
+        {
+          "name": "memo_executivo",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_motor_opp ON motor_avaliacoes (oportunidade_id)"]
+    },
+    {
+      "name": "checklist_itens",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "oportunidade_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "oportunidades"
+        },
+        {
+          "name": "categoria",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "documento",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "obrigatorio",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "eliminatorio",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["pendente", "em_preparacao", "pronto", "nao_aplicavel"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_checklist_opp ON checklist_itens (oportunidade_id)"]
+    },
+    {
+      "name": "gate_decisoes",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "oportunidade_id",
+          "type": "relation",
+          "required": true,
+          "system": false,
+          "collectionRef": "oportunidades"
+        },
+        {
+          "name": "q1_trava",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "q2_prazo",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "q3_documentos",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "q4_margem",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "q5_capacidade",
+          "type": "bool",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "decisao",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": ["ENTRAR", "ANALISAR_MAIS", "NAO_ENTRAR"]
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE INDEX idx_gate_opp ON gate_decisoes (oportunidade_id)"]
+    },
+    {
+      "name": "config",
+      "type": "base",
+      "apiRules": {
+        "list": "@request.auth.id != ''",
+        "view": "@request.auth.id != ''",
+        "create": "@request.auth.id != ''",
+        "update": "@request.auth.id != ''",
+        "delete": "@request.auth.id != ''"
+      },
+      "fields": [
+        {
+          "name": "chave",
+          "type": "text",
+          "required": true,
+          "system": false
+        },
+        {
+          "name": "valor",
+          "type": "text",
+          "required": false,
+          "system": false
+        },
+        {
+          "name": "created",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate"]
+        },
+        {
+          "name": "updated",
+          "type": "autodate",
+          "required": false,
+          "system": false,
+          "autodateTriggers": ["onCreate", "onUpdate"]
+        }
+      ],
+      "indexes": ["CREATE UNIQUE INDEX idx_config_chave ON config (chave)"]
+    }
+  ]
+}

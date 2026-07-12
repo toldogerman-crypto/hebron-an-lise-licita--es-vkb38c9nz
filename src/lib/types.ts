@@ -1,21 +1,27 @@
-export type OpportunityStatus = 'interesse' | 'aguardando' | 'sessao' | 'finalizado'
+export type OpportunityStatus =
+  | 'recebida'
+  | 'em_analise'
+  | 'aguardando_decisao'
+  | 'em_preparacao'
+  | 'enviada'
+  | 'encerrada'
+  | 'nao_entrar'
+  | 'analisar_mais'
+
 export type Verdict = 'ENTRAR' | 'ANALISAR MAIS' | 'NÃO ENTRAR' | 'Pendente'
 export type UrgencyLevel = 'green' | 'yellow' | 'red'
 export type ResultStatus = 'ganhou' | 'perdeu' | 'nao_participou'
+export type UserRole = 'admin' | 'legal' | 'financial'
+export type MotorDecision = 'GO' | 'GO_CONDICIONAL' | 'NO_GO'
+export type GateDecision = 'ENTRAR' | 'ANALISAR_MAIS' | 'NAO_ENTRAR'
+export type ChecklistStatus = 'pendente' | 'em_preparacao' | 'pronto' | 'nao_aplicavel'
 
 export interface AnalysisResult {
   veredicto: Verdict
   score: number
   trava: string | null
   resumo_simples: string
-  identificacao: {
-    numero_edital?: { valor: string; fonte: string }
-    orgao?: { valor: string; fonte: string }
-    municipio_uf?: { valor: string; fonte: string }
-    modalidade?: { valor: string; fonte: string }
-    srp?: { valor: string; fonte: string }
-    portal?: { valor: string; fonte: string }
-  }
+  identificacao: Record<string, { valor: string; fonte: string } | undefined>
   objeto: { valor: string; fonte: string }
   itens: Array<{
     item: string
@@ -25,18 +31,8 @@ export interface AnalysisResult {
     fonte: string
   }>
   total_itens: string
-  valores_prazos: {
-    valor_estimado?: { valor: string; fonte: string }
-    data_abertura_propostas?: { valor: string; fonte: string }
-    prazo_entrega_execucao?: { valor: string; fonte: string }
-    prazo_pagamento?: { valor: string; fonte: string }
-    vigencia_contrato?: { valor: string; fonte: string }
-  }
-  compatibilidade: {
-    cnae_compativel: boolean
-    cnae_match: string
-    justificativa: string
-  }
+  valores_prazos: Record<string, { valor: string; fonte: string } | undefined>
+  compatibilidade: { cnae_compativel: boolean; cnae_match: string; justificativa: string }
   fit_estrategico: {
     segmento_prioritario: boolean
     segmento: string
@@ -44,13 +40,7 @@ export interface AnalysisResult {
     recorrencia: string
   }
   beneficio_epp: { valor: string; fonte: string }
-  exigencias: {
-    atestado_tecnico?: { valor: string; fonte: string }
-    garantia?: { valor: string; fonte: string }
-    vistoria?: { valor: string; fonte: string }
-    amostra?: { valor: string; fonte: string }
-    documentos_habilitacao?: Array<{ valor: string; fonte: string }>
-  }
+  exigencias: Record<string, unknown>
   local_entrega: { valor: string; fonte: string }
   pontos_positivos: string[]
   riscos: string[]
@@ -99,7 +89,20 @@ export interface ChecklistItem {
   completed: boolean
 }
 
-export type UserRole = 'admin' | 'legal' | 'financial'
+export interface MotorScore {
+  elegibilidade: number
+  prazo: number
+  financeiro: number
+  execucao: number
+  total: number
+}
+
+export interface KnockoutCheck {
+  id: string
+  label: string
+  triggered: boolean
+  source: string
+}
 
 export interface Opportunity {
   id: string
@@ -118,17 +121,21 @@ export interface Opportunity {
   portal: string
   responsible: string
   observations: string
-
   resultado?: ResultStatus | null
   valorHomologado?: string
   aprendizado?: string
-
   analysis?: AnalysisResult
   deepRisco?: DeepAnalysisRisco
   deepMargem?: DeepAnalysisMargem
-
   decisionGate?: DecisionQuestion[]
   radarSynced: boolean
   estimatedMargin?: number
   checklist?: ChecklistItem[]
+  files?: string[]
+  motorScore?: MotorScore
+  motorDecision?: MotorDecision
+  motorMemo?: string
+  knockouts?: KnockoutCheck[]
+  createdBy?: string
+  responsavelId?: string
 }
