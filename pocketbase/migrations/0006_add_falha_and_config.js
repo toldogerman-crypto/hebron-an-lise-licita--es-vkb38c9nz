@@ -104,7 +104,7 @@ migrate(
         existing.set('valor', c.valor)
         app.save(existing)
       } catch (_) {
-        var record = new Record(configCol)
+        var record = configCol.newRecord()
         record.set('chave', c.chave)
         record.set('valor', c.valor)
         app.save(record)
