@@ -94,7 +94,23 @@ routerAdd(
 
     if (!promptCamada1) {
       promptCamada1 =
-        'Você é um analista sênior de licitações públicas brasileiras. Analise o edital e produza um parecer estruturado em JSON com: veredicto, score (0-100), resumo_simples, titulo, numero_edital, orgao, municipio_uf, modalidade, data_abertura, identificacao, objeto, itens, valores_prazos, compatibilidade, pontos_positivos, riscos, recomendacao.'
+        'Você é um analista sênior de licitações públicas brasileiras. Analise o edital e produza um parecer estruturado em JSON.\n\n' +
+        'EXTRAÇÃO PRIORITÁRIA (máxima precisão):\n' +
+        '1. municipio_uf — Formato: "Cidade - UF" (ex: "Lages - SC")\n' +
+        '2. modalidade — Modalidade da licitação\n' +
+        '3. data_abertura — Formato: YYYY-MM-DD (ex: "2024-03-15"). Converta DD/MM/YYYY.\n' +
+        '4. orgao — Órgão responsável\n' +
+        '5. numero_edital — Número do edital\n\n' +
+        'PERFIL DA EMPRESA:\n{{PERFIL_EMPRESA}}\n\n' +
+        'REGRAS: NUNCA invente informação. Use "NÃO LOCALIZADO NO EDITAL" se não encontrar.\n\n' +
+        'SISTEMA DE PONTUAÇÃO (0-100):\n' +
+        '+20 CNAE compatível | +15 segmento prioritário | +10 ME/EPP\n' +
+        '+10 sem atestado | +10 dispensa/cotação | +5 pregão eletrônico\n' +
+        '+10 sem estoque | +5 ≤R$200k | +3 até R$500k | +5 sem garantia\n' +
+        '+10 entrega remota/Sul | +5 outras regiões | +5 doc padrão\n\n' +
+        'VEREDICTO: ≥70 "ENTRAR" | 45-69 "ANALISAR" | <45 "NÃO ENTRAR"\n' +
+        'TRAVAS: CNAE incompatível, prazo vencido, atestado impossível, obras/combustíveis/medicamentos\n\n' +
+        'RETORNE APENAS JSON com: veredicto, score, trava, resumo_simples, titulo, numero_edital, orgao, municipio_uf, modalidade, data_abertura, identificacao, objeto, itens, total_itens, valores_prazos, compatibilidade, fit_estrategico, beneficio_epp, local_entrega, pontos_positivos, riscos, glossario, recomendacao.'
     }
 
     if (perfilEmpresa) {
@@ -129,6 +145,60 @@ routerAdd(
       return null
     }
 
+    function pad2(n) {
+      n = String(n)
+      return n.length < 2 ? '0' + n : n
+    }
+
+    function normalizeDate(value) {
+      if (!value || typeof value !== 'string') return ''
+      var trimmed = value.trim()
+      if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+        var m = trimmed.match(/(\d{4}-\d{2}-\d{2})/)
+        return m ? m[1] : ''
+      }
+      var match = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+      if (match) return match[3] + '-' + pad2(match[2]) + '-' + pad2(match[1])
+      match = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/)
+      if (match) return '20' + match[3] + '-' + pad2(match[2]) + '-' + pad2(match[1])
+      match = trimmed.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/)
+      if (match) return match[3] + '-' + pad2(match[2]) + '-' + pad2(match[1])
+      var months = {
+        janeiro: '01',
+        fevereiro: '02',
+        marco: '03',
+        março: '03',
+        abril: '04',
+        maio: '05',
+        junho: '06',
+        julho: '07',
+        agosto: '08',
+        setembro: '09',
+        outubro: '10',
+        novembro: '11',
+        dezembro: '12',
+      }
+      match = trimmed.match(/(\d{1,2})\s+de\s+([a-zA-Zç]+)\s+de\s+(\d{4})/i)
+      if (match) {
+        var mn = match[2].toLowerCase()
+        if (months[mn]) return match[3] + '-' + months[mn] + '-' + pad2(match[1])
+      }
+      return ''
+    }
+
+    function normalizeMunicipioUf(value) {
+      if (!value || typeof value !== 'string') return ''
+      var trimmed = value.trim()
+      if (/^.+\s-\s[A-Z]{2}$/.test(trimmed)) return trimmed
+      var match = trimmed.match(/^(.+?)\s*\/\s*([A-Z]{2})$/)
+      if (match) return match[1].trim() + ' - ' + match[2].trim()
+      match = trimmed.match(/^(.+?)\s*,\s*([A-Z]{2})$/)
+      if (match) return match[1].trim() + ' - ' + match[2].trim()
+      match = trimmed.match(/^(.+?)\s+([A-Z]{2})$/)
+      if (match) return match[1].trim() + ' - ' + match[2].trim()
+      return trimmed
+    }
+
     try {
       var reply = $ai.chat({
         model: 'fast',
@@ -142,6 +212,7 @@ routerAdd(
               '\n\nDocumentos:\n' +
               (documentText ||
                 'Sem documentos anexados - faça análise baseada nas informações disponíveis.') +
+              '\n\nPRIORIDADE: Extraia com máxima precisão: municipio_uf (formato "Cidade - UF"), modalidade, data_abertura (formato YYYY-MM-DD), orgao e numero_edital.' +
               '\n\nIMPORTANTE: Retorne APENAS o JSON, sem markdown ou texto adicional.',
           },
         ],
@@ -182,6 +253,16 @@ routerAdd(
       analiseRecord.set('tipo', 'camada1')
       analiseRecord.set('json_resultado', content)
       $app.save(analiseRecord)
+
+      if (parsed.municipio_uf) {
+        parsed.municipio_uf = normalizeMunicipioUf(parsed.municipio_uf)
+      }
+      if (parsed.data_abertura) {
+        var normalizedDate = normalizeDate(parsed.data_abertura)
+        if (normalizedDate) {
+          parsed.data_abertura = normalizedDate
+        }
+      }
 
       opp.set('analysis', parsed)
       if (parsed.score !== undefined) opp.set('score', parsed.score)

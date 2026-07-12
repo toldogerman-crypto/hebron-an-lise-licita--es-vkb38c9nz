@@ -1,11 +1,14 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, BrainCircuit, Loader2, AlertCircle, RotateCcw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useRealtime } from '@/hooks/use-realtime'
 import useMainStore from '@/stores/main'
+import { analyzeCamada1 } from '@/services/oportunidades'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +34,7 @@ export default function OpportunityDetail() {
   const opp = opportunities.find((o) => o.id === id)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isRetrying, setIsRetrying] = useState(false)
 
   useRealtime<Record<string, any>>('oportunidades', (e) => {
     if (e.record.id === id) {
@@ -73,6 +77,16 @@ export default function OpportunityDetail() {
     }
   }
 
+  const handleRetryAnalysis = async () => {
+    if (!id) return
+    setIsRetrying(true)
+    try {
+      await analyzeCamada1(id)
+    } catch {
+      setIsRetrying(false)
+    }
+  }
+
   if (opp.status === 'em_analise') {
     return (
       <div className="space-y-6 pb-20">
@@ -81,25 +95,53 @@ export default function OpportunityDetail() {
             <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Pipeline
           </Link>
         </Button>
-        <div className="max-w-2xl mx-auto space-y-8 pt-8">
-          <div className="text-center">
-            <Loader2 className="mx-auto h-12 w-12 text-[#2563EB] animate-spin mb-4" />
-            <h2 className="text-xl font-bold font-display text-slate-900 mb-2">
-              Analisando edital...
+        <Card className="max-w-2xl mx-auto p-8 shadow-md border-blue-100">
+          <div className="text-center space-y-4">
+            <div className="relative inline-flex">
+              <BrainCircuit className="h-16 w-16 text-[#2563EB]" />
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="absolute inline-flex h-full w-full rounded-full bg-[#2563EB] opacity-75 animate-ping"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-[#2563EB]"></span>
+              </span>
+            </div>
+            <h2 className="text-xl font-bold font-display text-slate-900">
+              Sistema trabalhando...
             </h2>
-            <p className="text-sm text-slate-500">
-              A IA está processando o documento e extraindo os dados. Aguarde.
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
+              A IA está processando o documento e extraindo os dados do edital. Esta página será
+              atualizada automaticamente quando a análise for concluída.
             </p>
-          </div>
-          <div className="space-y-2">
-            <Progress value={66} className="h-2" />
-            <div className="flex justify-between text-xs text-slate-400">
-              <span className="text-[#2563EB] font-medium">Lendo edital...</span>
-              <span className="text-[#2563EB] font-medium">Extraindo dados...</span>
-              <span>Calculando score...</span>
+            <div className="max-w-md mx-auto space-y-2 pt-4">
+              <Progress value={66} className="h-2" />
+              <div className="flex justify-between text-xs text-slate-400">
+                <span className="text-[#2563EB] font-medium">Lendo edital...</span>
+                <span className="text-[#2563EB] font-medium">Extraindo dados...</span>
+                <span>Calculando score...</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 justify-center pt-4">
+              {['Município/UF', 'Modalidade', 'Data de Abertura', 'Órgão', 'Nº do Edital'].map(
+                (field, i) => (
+                  <span
+                    key={field}
+                    className="text-xs px-3 py-1 rounded-full bg-blue-50 text-[#2563EB] border border-blue-200 animate-pulse"
+                    style={{ animationDelay: `${i * 0.15}s` }}
+                  >
+                    {field}
+                  </span>
+                ),
+              )}
+            </div>
+            <div className="border rounded-xl p-4 bg-slate-50 space-y-3 text-left">
+              <Skeleton className="h-5 w-3/4" />
+              <div className="grid grid-cols-2 gap-3">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+              <Skeleton className="h-8 w-full" />
             </div>
           </div>
-        </div>
+        </Card>
       </div>
     )
   }
@@ -120,11 +162,23 @@ export default function OpportunityDetail() {
               {opp.observations || 'Ocorreu um erro durante o processamento do edital.'}
             </p>
           </div>
-          <div className="flex justify-center gap-3">
+          <div className="flex justify-center gap-3 flex-wrap">
+            <Button
+              onClick={handleRetryAnalysis}
+              disabled={isRetrying}
+              className="gap-2 bg-[#2563EB] hover:bg-blue-700"
+            >
+              {isRetrying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RotateCcw className="h-4 w-4" />
+              )}
+              {isRetrying ? 'Reanalisando...' : 'Reanalisar'}
+            </Button>
             <Button onClick={() => refreshOpportunities()} variant="outline" className="gap-2">
               <RotateCcw className="h-4 w-4" /> Atualizar
             </Button>
-            <Button asChild className="gap-2 bg-[#2563EB] hover:bg-blue-700">
+            <Button asChild variant="outline" className="gap-2">
               <Link to="/nova-oportunidade">Nova Análise</Link>
             </Button>
           </div>

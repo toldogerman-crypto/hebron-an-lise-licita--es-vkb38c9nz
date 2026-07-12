@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Progress } from '@/components/ui/progress'
+import { Skeleton } from '@/components/ui/skeleton'
 import {
   Select,
   SelectContent,
@@ -40,6 +41,13 @@ const MODALITIES = [
 ]
 
 const PROGRESS_MESSAGES = ['Lendo edital...', 'Extraindo dados...', 'Calculando score...']
+const EXTRACTION_FIELDS = [
+  'Município/UF',
+  'Modalidade',
+  'Data de Abertura',
+  'Órgão',
+  'Nº do Edital',
+]
 
 export default function NewOpportunity() {
   const navigate = useNavigate()
@@ -86,7 +94,7 @@ export default function NewOpportunity() {
         })
         setStage('review')
       } else if (status === 'falha_analise') {
-        setError(r.observations || 'Falha na análise do documento.')
+        setError(e.record.observations || 'Falha na análise do documento.')
         setStage('error')
       }
     },
@@ -241,7 +249,9 @@ export default function NewOpportunity() {
           <h2 className="text-xl font-bold font-display text-slate-900 mb-2">
             {PROGRESS_MESSAGES[progressStep]}
           </h2>
-          <p className="text-sm text-slate-500">A IA está processando o edital. Aguarde...</p>
+          <p className="text-sm text-slate-500">
+            A IA está processando o edital e extraindo os dados.
+          </p>
         </div>
         <div className="space-y-2">
           <Progress value={((progressStep + 1) / 3) * 100} className="h-2" />
@@ -252,6 +262,29 @@ export default function NewOpportunity() {
               </span>
             ))}
           </div>
+        </div>
+        <div className="flex flex-wrap gap-2 justify-center">
+          {EXTRACTION_FIELDS.map((field, i) => (
+            <span
+              key={field}
+              className="text-xs px-3 py-1 rounded-full bg-blue-50 text-[#2563EB] border border-blue-200 animate-pulse"
+              style={{ animationDelay: `${i * 0.15}s` }}
+            >
+              {field}
+            </span>
+          ))}
+        </div>
+        <div className="border rounded-xl p-6 bg-white space-y-4 shadow-sm">
+          <Skeleton className="h-6 w-3/4" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <Skeleton className="h-10 w-full" />
         </div>
       </div>
     )
