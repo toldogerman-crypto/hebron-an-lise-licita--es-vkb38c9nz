@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-12T20:29:24.909Z",
+  "generatedAt": "2026-07-12T20:35:56.647Z",
   "collections": [
     {
       "name": "users",
@@ -116,22 +116,6 @@
           "required": false,
           "system": false,
           "collectionRef": "users"
-        },
-        {
-          "name": "status",
-          "type": "select",
-          "required": false,
-          "system": false,
-          "selectValues": [
-            "recebida",
-            "em_analise",
-            "aguardando_decisao",
-            "em_preparacao",
-            "enviada",
-            "encerrada",
-            "nao_entrar",
-            "analisar_mais"
-          ]
         },
         {
           "name": "resultado",
@@ -255,6 +239,23 @@
           "required": false,
           "system": false,
           "autodateTriggers": ["onCreate", "onUpdate"]
+        },
+        {
+          "name": "status",
+          "type": "select",
+          "required": false,
+          "system": false,
+          "selectValues": [
+            "recebida",
+            "em_analise",
+            "aguardando_decisao",
+            "em_preparacao",
+            "enviada",
+            "encerrada",
+            "nao_entrar",
+            "analisar_mais",
+            "falha_analise"
+          ]
         }
       ],
       "indexes": [

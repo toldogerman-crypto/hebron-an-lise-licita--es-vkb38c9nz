@@ -1,10 +1,7 @@
 migrate(
   (app) => {
     var col = app.findCollectionByNameOrId('oportunidades')
-    var existingStatus = col.fields.getByName('status')
-    if (existingStatus) {
-      col.fields.remove(existingStatus)
-    }
+    col.fields.removeByName('status')
     col.fields.add(
       new SelectField({
         name: 'status',
@@ -109,10 +106,7 @@ migrate(
   },
   (app) => {
     var col = app.findCollectionByNameOrId('oportunidades')
-    var existingStatus = col.fields.getByName('status')
-    if (existingStatus) {
-      col.fields.remove(existingStatus)
-    }
+    col.fields.removeByName('status')
     col.fields.add(
       new SelectField({
         name: 'status',
