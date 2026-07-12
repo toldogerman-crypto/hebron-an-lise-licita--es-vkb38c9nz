@@ -1,6 +1,6 @@
 import { Navigate, Outlet } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
-import useAuthStore from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 
 export function ProtectedRoute() {
   const { user, isLoading } = useAuthStore()

@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { ShieldCheck, Loader2, AlertCircle } from 'lucide-react'
-import useAuthStore from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 import { SKIP_CLOUD_ENABLED } from '@/lib/skip-cloud'
 
 export default function Login() {

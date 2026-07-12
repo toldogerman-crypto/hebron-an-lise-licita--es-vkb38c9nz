@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useCallback } from 'react'
 import { Opportunity, UserRole, OpportunityStatus } from '@/lib/types'
 import pb from '@/lib/pocketbase/client'
-import useAuthStore from '@/stores/auth'
+import { useAuthStore } from '@/stores/auth'
 import type { RecordModel } from 'pocketbase'
 
 interface MainStoreValue {
