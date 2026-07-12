@@ -1,11 +1,22 @@
-import { useParams, Link } from 'react-router-dom'
-import { ArrowLeft, BrainCircuit, Loader2, AlertCircle, RotateCcw } from 'lucide-react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import { ArrowLeft, BrainCircuit, Loader2, AlertCircle, RotateCcw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { StatusBadge } from '@/components/StatusBadge'
 import { useRealtime } from '@/hooks/use-realtime'
 import useMainStore from '@/stores/main'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { useState } from 'react'
 import { ExecutiveTab } from './ExecutiveTab'
 import { ItemsTab } from './ItemsTab'
 import { DeepAnalysisTab } from './DeepAnalysisTab'
@@ -15,8 +26,11 @@ import { cn } from '@/lib/utils'
 
 export default function OpportunityDetail() {
   const { id } = useParams()
-  const { opportunities, role, refreshOpportunities } = useMainStore()
+  const navigate = useNavigate()
+  const { opportunities, role, refreshOpportunities, deleteOpportunity } = useMainStore()
   const opp = opportunities.find((o) => o.id === id)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useRealtime<Record<string, any>>('oportunidades', (e) => {
     if (e.record.id === id) {
@@ -45,6 +59,18 @@ export default function OpportunityDetail() {
         </div>
       </div>
     )
+  }
+
+  const handleDelete = async () => {
+    if (!id) return
+    setIsDeleting(true)
+    try {
+      await deleteOpportunity(id)
+      navigate('/')
+    } catch (err) {
+      console.error('Failed to delete opportunity:', err)
+      setIsDeleting(false)
+    }
   }
 
   if (opp.status === 'em_analise') {
@@ -145,6 +171,14 @@ export default function OpportunityDetail() {
           <Link to="/radar">
             <ArrowLeft className="h-4 w-4 mr-2" /> Voltar ao Pipeline
           </Link>
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+          onClick={() => setDeleteDialogOpen(true)}
+        >
+          <Trash2 className="h-4 w-4 mr-2" /> Excluir
         </Button>
       </div>
 
@@ -252,6 +286,30 @@ export default function OpportunityDetail() {
           <ChecklistTab opp={opp} />
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(o) => !o && setDeleteDialogOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir oportunidade?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. Todos os dados e documentos serão perdidos.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault()
+                handleDelete()
+              }}
+              disabled={isDeleting}
+              className="bg-rose-600 hover:bg-rose-700"
+            >
+              {isDeleting ? 'Excluindo...' : 'Excluir'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

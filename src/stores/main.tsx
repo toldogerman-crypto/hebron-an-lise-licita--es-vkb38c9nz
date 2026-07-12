@@ -89,9 +89,21 @@ export function MainProvider({ children }: { children: ReactNode }) {
     setOpportunities((prev) => prev.map((o) => (o.id === id ? { ...o, ...data } : o)))
   }, [])
 
+  const deleteOpportunity = useCallback(async (id: string) => {
+    await deleteOportunidade(id)
+    setOpportunities((prev) => prev.filter((o) => o.id !== id))
+  }, [])
+
   return (
     <MainStoreContext.Provider
-      value={{ opportunities, role, setRole, refreshOpportunities, updateOpportunity }}
+      value={{
+        opportunities,
+        role,
+        setRole,
+        refreshOpportunities,
+        updateOpportunity,
+        deleteOpportunity,
+      }}
     >
       {children}
     </MainStoreContext.Provider>
